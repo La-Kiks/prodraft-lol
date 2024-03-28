@@ -57,7 +57,7 @@ export class updateChampions {
         for (const key in data) {
             if (data.hasOwnProperty(key)) {
                 const champion = data[key];
-                let champUrlSq = newLinks.genSquareImg(champion.name.replace(/\s/g, ""))
+                let champUrlSq = newLinks.genSquareImg(key.replace(/\s/g, ""))
                 const champUrlCt = newLinks.genBackgImg(champion.lol_id)
                 const voiceUrlP = newLinks.genPickVoice(champion.lol_id)
                 const voiceUrlB = newLinks.genBanVoice(champion.lol_id)
@@ -65,7 +65,7 @@ export class updateChampions {
                     // Handling exceptions where URL follow an alternate pattern
                     const response = await fetch(champUrlSq)
                     if (!response.ok) {
-                        champUrlSq = newLinks.genSquareImgAlt(champion.name.replace(/\s/g, ""))
+                        champUrlSq = newLinks.genSquareImgAlt(key.replace(/\s/g, ""))
                     }
                 } catch (e) {
                     console.error(e)
@@ -90,6 +90,9 @@ export class updateChampions {
 
             Orianna:
                 "https://raw.communitydragon.org/latest/game/assets/characters/orianna/hud/oriana_square.png",
+
+            Nunu:
+                "https://raw.communitydragon.org/latest/game/assets/characters/nunu/hud/nunu_square.png",
 
             Rammus:
                 "https://raw.communitydragon.org/latest/game/assets/characters/rammus/hud/armordillo_square.png",
@@ -124,24 +127,30 @@ export class updateChampions {
             pick_v: "",
             ban_v: ""
         }
+        return data
     }
 
     // Need to add alt_name list & maybe fix tags
 
-    // Not used
+    // Not used but looks cool
     addUrlToChampionSq(champion: Champion, url: string): Champion {
         return { ...champion, champ_sq: url }
     }
 
-    // Create a custom JSON file : champions.json
-    async createChampionsJson() {
+    // Create the data champions
+    async createChampionsData() {
         const champObject = new updateChampions()
         const dlData = await champObject.dlChampions()
         const parsedData = champObject.parseChampData(dlData)
         const imgData = await champObject.addImages(parsedData)
-        const finalData = champObject.addUnique(imgData)
+        champObject.addUnique(imgData)
+        return imgData
+    }
+
+    // Create a custom JSON file : champions.json
+    createChampionsJson(data: { [key: string]: Champion }) {
         const filePath = path.join(__dirname, 'champions.json')
-        const jsonString = JSON.stringify(finalData, null, 2)
+        const jsonString = JSON.stringify(data, null, 2)
         return writeFileSync(filePath, jsonString)
     }
 

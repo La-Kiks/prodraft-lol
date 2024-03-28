@@ -57,8 +57,12 @@ async function buildServer() {
 
     app.get('/healthcheck', async () => {
         const champObject = new updateChampions()
-        champObject.createChampionsJson()
+        // const data = await champObject.dlChampions()
+        // const dta = await champObject.createChampionsData()
+        // champObject.createChampionsJson(dta)
 
+        const db = new RedisDatabase()
+        // await db.createDB()
 
         return {
             status: "ok",
