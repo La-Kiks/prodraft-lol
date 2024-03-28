@@ -111,6 +111,21 @@ export class updateChampions {
         return data
     }
 
+    // Unique Exceptions 
+    async addUnique(data: { [key: string]: Champion }) {
+        data.Helmet = {
+            id: "0",
+            lol_id: "0",
+            name: "Helmet",
+            alt_name: "",
+            tags: "",
+            champ_sq: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-collections/global/default/icon-helmet.png",
+            champ_ct: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-collections/global/default/icon-helmet.png",
+            pick_v: "",
+            ban_v: ""
+        }
+    }
+
     // Need to add alt_name list & maybe fix tags
 
     // Not used
@@ -124,8 +139,9 @@ export class updateChampions {
         const dlData = await champObject.dlChampions()
         const parsedData = champObject.parseChampData(dlData)
         const imgData = await champObject.addImages(parsedData)
+        const finalData = champObject.addUnique(imgData)
         const filePath = path.join(__dirname, 'champions.json')
-        const jsonString = JSON.stringify(imgData, null, 2)
+        const jsonString = JSON.stringify(finalData, null, 2)
         return writeFileSync(filePath, jsonString)
     }
 

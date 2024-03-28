@@ -56,6 +56,9 @@ async function buildServer() {
     })
 
     app.get('/healthcheck', async () => {
+        const champObject = new updateChampions()
+        champObject.createChampionsJson()
+
 
         return {
             status: "ok",
