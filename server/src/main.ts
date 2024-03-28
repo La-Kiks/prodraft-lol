@@ -5,6 +5,10 @@ import fastifySocketIO from "fastify-socket.io"
 import { Server } from "socket.io"
 import Redis from 'ioredis'
 import closeWithGrace from 'close-with-grace'
+import { RedisDatabase, Champion } from "./actions/database"
+import { updateChampions } from "./actions/updatechampions"
+
+
 
 dotenv.config();
 
@@ -13,7 +17,8 @@ const HOST = process.env.HOST || '0.0.0.0'
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:8000';
 const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL
 
-// Fixing io type
+
+// Fixing io decorator typescript error
 declare module "fastify" {
     interface FastifyInstance {
         io: Server<{ hello: string }>;
@@ -40,12 +45,25 @@ async function buildServer() {
     app.io.on('connection', (socket: any) => {
         console.log('Connected')
 
+        // Testing
+        socket.emit('socketId', socket.id)
+
+
+        //
         socket.on('disconnect', () => {
             console.log('Disconnected')
         })
     })
 
-    app.get('/healthcheck', () => {
+    app.get('/healthcheck', async () => {
+
+        const champObject = new updateChampions()
+        const data = await champObject.dlChampions()
+        const parsedData = champObject.parseChampData(data)
+        console.log(parsedData)
+
+
+
         return {
             status: "ok",
             port: PORT,
