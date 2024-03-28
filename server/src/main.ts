@@ -57,13 +57,6 @@ async function buildServer() {
 
     app.get('/healthcheck', async () => {
 
-        const champObject = new updateChampions()
-        const data = await champObject.dlChampions()
-        const parsedData = champObject.parseChampData(data)
-        console.log(parsedData)
-
-
-
         return {
             status: "ok",
             port: PORT,
