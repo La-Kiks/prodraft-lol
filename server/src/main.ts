@@ -2,7 +2,7 @@ import dotenv from "dotenv"
 import fastify from "fastify"
 import fastifyCors from '@fastify/cors'
 import fastifySocketIO from "fastify-socket.io"
-import { Server } from "socket.io"
+import { Server } from "socket.io" // to fix io decorator ts error
 import Redis from 'ioredis'
 import closeWithGrace from 'close-with-grace'
 import { RedisDatabase, Champion } from "./actions/database"
@@ -12,9 +12,9 @@ import { updateChampions } from "./actions/updatechampions"
 
 dotenv.config();
 
-const PORT = parseInt(process.env.PORT || '3000', 10)
+const PORT = parseInt(process.env.PORT || '3001', 10) // Avoid conflict with 3000
 const HOST = process.env.HOST || '0.0.0.0'
-const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:8000';
+const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000'; // For the UI
 const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL
 
 
@@ -42,11 +42,16 @@ async function buildServer() {
 
     await app.register(fastifySocketIO);
 
+
     app.io.on('connection', (socket: any) => {
         console.log('Connected')
 
-        // Testing
+        // Testing -- works with POSTMAN
         socket.emit('socketId', socket.id)
+
+        socket.on('hello', () => {
+            console.log('I received hello from the client')
+        })
 
 
         //
@@ -56,12 +61,14 @@ async function buildServer() {
     })
 
     app.get('/healthcheck', async () => {
-        const champObject = new updateChampions()
+        // const champObject = new updateChampions()
+
         // const data = await champObject.dlChampions()
         // const dta = await champObject.createChampionsData()
         // champObject.createChampionsJson(dta)
 
-        const db = new RedisDatabase()
+        // const db = new RedisDatabase()
+
         // await db.createDB()
 
         return {

@@ -1,11 +1,11 @@
 import path from "path"
-import { DownloadFailed } from "../../errors/downloadFailedError"
+import { DownloadFailed } from "../errors/downloadFailedError"
 import { existsSync, fstat, readFileSync, writeFileSync } from "fs"
 import { urlGen } from "./urlGenerator"
 import { RedisDatabase, Champion } from "./database"
 import { StringDecoder } from "string_decoder"
 import { stringify } from "querystring"
-import { RecordNotFoundError } from "../../errors/recordNotFoundError"
+import { RecordNotFoundError } from "../errors/recordNotFoundError"
 
 // export interface Champion {
 //     id: string;

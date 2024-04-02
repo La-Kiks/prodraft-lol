@@ -1,5 +1,5 @@
 import path from "path"
-import { DownloadFailed } from "../../errors/downloadFailedError"
+import { DownloadFailed } from "../errors/downloadFailedError"
 import { existsSync, readFileSync, writeFileSync } from "fs"
 
 

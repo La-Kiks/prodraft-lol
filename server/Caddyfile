@@ -1,5 +1,5 @@
-htttp://127.0.0.1 {
-  reverse_proxy chat-app-1:3000 chat-app-2:4000 chat-app-3:5000 {
+http://127.0.0.1 {
+  reverse_proxy instance-app-1:3001 instance-app-2:4000 instance-app-3:5000 {
     header_down Strict-Transport-Security max-age=31536000
     }
 }
