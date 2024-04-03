@@ -47,7 +47,7 @@ export class RedisDatabase {
         const key = champion.name;
         const exists = await this.client.exists(key);
         if (exists) {
-            console.log(`Champion with ID ${champion.id} already exists in the database.`);
+            console.log(`Champion : ${champion.name} already exists in the database.`);
             return;
         }
         await this.client.hmset(
@@ -60,26 +60,6 @@ export class RedisDatabase {
             'champ_ct', champion.champ_ct,
             'pick_v', champion.pick_v,
             'ban_v', champion.ban_v)
-    }
-
-    async getChampion(id: string): Promise<Champion | null> {
-        const championData = await this.client.hgetall(`champion:${id}`);
-        if (!championData) return null;
-        return {
-            id,
-            lol_id: championData.lol_id,
-            name: championData.name,
-            alt_name: championData.alt_name,
-            tags: championData.tags,
-            champ_sq: championData.champ_sq,
-            champ_ct: championData.champ_ct,
-            pick_v: championData.pick_v,
-            ban_v: championData.ban_v
-        };
-    }
-
-    async deleteChampion(id: string): Promise<void> {
-        await this.client.del(`champion:${id}`);
     }
 
     async deleteAllChampions() {

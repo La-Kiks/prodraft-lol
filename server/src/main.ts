@@ -49,8 +49,8 @@ async function buildServer() {
         // Testing -- works with POSTMAN
         socket.emit('socketId', socket.id)
 
-        socket.on('hello', () => {
-            console.log('I received hello from the client')
+        socket.on('hellodraft', () => {
+            console.log('Socket in /draft')
         })
 
 
@@ -61,12 +61,15 @@ async function buildServer() {
     })
 
     app.get('/healthcheck', async () => {
+        // This 3 lines can be used to create the champions.json
         // const champObject = new updateChampions()
-
-        // const data = await champObject.dlChampions()
+        const champObj = new updateChampions()
+        const name = await champObj.championList()
+        console.log(name)
         // const dta = await champObject.createChampionsData()
         // champObject.createChampionsJson(dta)
 
+        // .createDB() will create the redis DB + update champion data
         // const db = new RedisDatabase()
 
         // await db.createDB()

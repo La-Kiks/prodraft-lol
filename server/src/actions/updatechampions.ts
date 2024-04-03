@@ -6,6 +6,7 @@ import { RedisDatabase, Champion } from "./database"
 import { StringDecoder } from "string_decoder"
 import { stringify } from "querystring"
 import { RecordNotFoundError } from "../errors/recordNotFoundError"
+import { arrayBuffer } from "stream/consumers"
 
 // export interface Champion {
 //     id: string;
@@ -152,6 +153,21 @@ export class updateChampions {
         const filePath = path.join(__dirname, 'champions.json')
         const jsonString = JSON.stringify(data, null, 2)
         return writeFileSync(filePath, jsonString)
+    }
+
+    // Create the champion list array : (usefull to search the DB)
+    async championList() {
+        const data = await this.dlChampions()
+        let champArray: Array<string> = []
+        let i: number = 0
+        Object.keys(data.data).forEach(champion => {
+            i++
+            const { name } = data.data[champion]
+            const champ_name = name
+            champArray[i] = name
+        })
+        champArray[0] = "Helmet"
+        return champArray
     }
 
 }

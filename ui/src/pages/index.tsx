@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { FormEvent, useEffect, useState } from "react";
 import io, { Socket } from 'socket.io-client';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "ws://127.0.0.1:3001";
@@ -41,5 +43,30 @@ export default function Home() {
     })
   });
 
-  return <main></main>;
+  const [newMessage, setNewMessage] = useState('')
+  const [messages, setMessages] = useState([])
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+
+
+    setNewMessage('')
+
+  }
+
+  return <main className="flex flex-col p-4 w-full max-w-3xl m-auto">
+    <form onSubmit={handleSubmit} className="flex items-center">
+
+      < Textarea
+        className="rounded-lg mr-4"
+        placeholder="What's on your mind ?"
+        value={newMessage}
+        onChange={(e) => setNewMessage(e.target.value)}
+        maxLength={255}
+      />
+
+      <Button className="h-full">Send message</Button>
+
+
+    </form>
+  </main>;
 }
