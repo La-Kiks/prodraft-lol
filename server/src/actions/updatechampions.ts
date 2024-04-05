@@ -6,7 +6,6 @@ import { RedisDatabase, Champion } from "./database"
 import { StringDecoder } from "string_decoder"
 import { stringify } from "querystring"
 import { RecordNotFoundError } from "../errors/recordNotFoundError"
-import { arrayBuffer } from "stream/consumers"
 
 // export interface Champion {
 //     id: string;
@@ -39,16 +38,12 @@ export class updateChampions {
 
     parseChampData(data: { data: { [x: string]: { name: any; key: any; tags: any } } }) {
         const newData: { [key: string]: Champion } = {}
-        let i: number = 0
-
         Object.keys(data.data).forEach(champion => {
-            i++
             const { name, key, tags } = data.data[champion]
-            const id = String(i)
             const lol_id = key
             const champ_name = name
             const tagsJoint = typeof tags === "string" ? tags : Object.values(tags).join(", ");
-            newData[champion] = { id, lol_id, name: champ_name, alt_name: "", tags: tagsJoint, champ_sq: "", champ_ct: "", pick_v: "", ban_v: "" };
+            newData[champion] = { lol_id, name: champ_name, alt_name: "", tags: tagsJoint, champ_sq: "", champ_ct: "", pick_v: "", ban_v: "" };
         })
         return newData
     }
@@ -116,9 +111,8 @@ export class updateChampions {
     }
 
     // Unique Exceptions 
-    async addUnique(data: { [key: string]: Champion }) {
+    addUnique(data: { [key: string]: Champion }) {
         data.Helmet = {
-            id: "0",
             lol_id: "0",
             name: "Helmet",
             alt_name: "",
@@ -138,7 +132,7 @@ export class updateChampions {
         return { ...champion, champ_sq: url }
     }
 
-    // Create the data champions
+    // Create the data champions as Object
     async createChampionsData() {
         const champObject = new updateChampions()
         const dlData = await champObject.dlChampions()
@@ -155,15 +149,39 @@ export class updateChampions {
         return writeFileSync(filePath, jsonString)
     }
 
-    // Create the champion list array : (usefull to search the DB)
-    async championList() {
+    // championList only usefull to look through Redis Database
+    // Create the champion list array using the champions.json file locally created
+    championListLocal() {
+        try {
+            const filePath = path.join(__dirname, 'champions.json')
+            const jsonData = readFileSync(filePath, "utf-8")
+            const data = JSON.parse(jsonData)
+            let champArray: Array<string> = []
+            let i: number = 0
+            Object.keys(data).forEach(champion => {
+                i++
+                const { name } = data[champion]
+                champArray[i] = name
+            })
+            // Adding Helmet at start & deleting it from last position
+            champArray[0] = "Helmet"
+            champArray.pop()
+            return champArray
+
+        } catch (e) {
+            console.error(e)
+            throw new RecordNotFoundError("Did not find the local file : champions.json")
+        }
+    }
+
+    // Create the champion list array using the file from online using DL function
+    async championListWithDl() {
         const data = await this.dlChampions()
         let champArray: Array<string> = []
         let i: number = 0
         Object.keys(data.data).forEach(champion => {
             i++
             const { name } = data.data[champion]
-            const champ_name = name
             champArray[i] = name
         })
         champArray[0] = "Helmet"

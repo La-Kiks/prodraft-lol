@@ -1,3 +1,4 @@
+// Usefull for scaling with Upstash Redis.
 import dotenv from "dotenv"
 import Redis from 'ioredis'
 import { updateChampions } from "./updatechampions";
@@ -8,7 +9,6 @@ const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL
 
 
 export interface Champion {
-    id: string;
     lol_id: string;
     name: string;
     alt_name: string;
@@ -18,6 +18,7 @@ export interface Champion {
     pick_v: string;
     ban_v: string;
 }
+
 
 export class RedisDatabase {
     private client: Redis;
@@ -38,11 +39,14 @@ export class RedisDatabase {
         for (const key in data) {
             if (data.hasOwnProperty(key)) {
                 const champion = data[key]
-                await this.addChampion(champion)
+                // <deprecated> await this.addChampion(champion)
+                await this.addChampionJson(champion)
             }
         }
+        console.log("Redis Database of champions created.")
     }
 
+    // <deprecated> Using Hashes (Order can be random) 
     async addChampion(champion: Champion): Promise<void> {
         const key = champion.name;
         const exists = await this.client.exists(key);
@@ -62,6 +66,18 @@ export class RedisDatabase {
             'ban_v', champion.ban_v)
     }
 
+    // Using JSON Serialization : to keep the order of data
+    async addChampionJson(champion: Champion): Promise<void> {
+        const key = champion.name;
+        const exists = await this.client.exists(key);
+        if (exists) {
+            console.log(`Champion : ${champion.name} already exists in the database.`);
+            return;
+        }
+        await this.client.set(champion.name, JSON.stringify(champion))
+    }
+
+    // Can be usefull for updates ; delete all & start anew
     async deleteAllChampions() {
         try {
             await this.client.flushall();
@@ -73,19 +89,29 @@ export class RedisDatabase {
         }
     }
 
-    // FUNCTION TO WORK ON
-    async getData() {
-        try {
-            // Assuming your data is stored under keys like "champion:1", "champion:2", etc.
-            const championData = await this.client.hgetall('champion:1'); // Replace '1' with the specific ID you want to retrieve
-            console.log(championData);
-        } catch (error) {
-            console.error('Error retrieving data from Redis', error);
-        } finally {
-            this.client.quit(); // Close the Redis connection when done
-        }
+    // Only if the DATA stored is JSON
+    async getChampion(name: string): Promise<Champion | null> {
+        const data = await this.client.get(name);
+        return data ? JSON.parse(data) : null;
     }
 
-
+    async getAllChampions() {
+        try {
+            const champObject = new updateChampions()
+            const championList = champObject.championListLocal()
+            // Using the local list is good if champions.json updated else can use champlistwithdl
+            let championData: { [key: string]: Champion } = {};
+            for (let i = 0; i < championList.length; i++) {
+                let data = await this.getChampion(championList[i])
+                const champion: Champion = data as Champion;
+                championData[championList[i]] = champion
+            }
+            return championData
+        } catch (e) {
+            console.error('Error retrieving data from Redis', e);
+        } finally {
+            this.client.quit();
+        }
+    }
 
 }

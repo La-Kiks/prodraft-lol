@@ -7,12 +7,13 @@ import Redis from 'ioredis'
 import closeWithGrace from 'close-with-grace'
 import { RedisDatabase, Champion } from "./actions/database"
 import { updateChampions } from "./actions/updatechampions"
-
+import { Data } from "ws"
+import { LocalData } from "./actions/localbase"
 
 
 dotenv.config();
 
-const PORT = parseInt(process.env.PORT || '3001', 10) // Avoid conflict with 3000
+const PORT = parseInt(process.env.PORT || '3001', 10) // For the SERVER ; avoid conflict with 3000
 const HOST = process.env.HOST || '0.0.0.0'
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000'; // For the UI
 const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL
@@ -29,6 +30,7 @@ if (!UPSTASH_REDIS_REST_URL) {
     console.error("Missing UPSTRASH_REDIS_REST_URL")
     process.exit(1)
 }
+
 
 const publisher = new Redis(UPSTASH_REDIS_REST_URL)
 const subscriber = new Redis(UPSTASH_REDIS_REST_URL)
@@ -61,18 +63,12 @@ async function buildServer() {
     })
 
     app.get('/healthcheck', async () => {
-        // This 3 lines can be used to create the champions.json
-        // const champObject = new updateChampions()
-        const champObj = new updateChampions()
-        const name = await champObj.championList()
-        console.log(name)
-        // const dta = await champObject.createChampionsData()
-        // champObject.createChampionsJson(dta)
+        const data = new LocalData()
+        console.log(data.getAllChampions())
 
-        // .createDB() will create the redis DB + update champion data
-        // const db = new RedisDatabase()
 
-        // await db.createDB()
+
+
 
         return {
             status: "ok",
