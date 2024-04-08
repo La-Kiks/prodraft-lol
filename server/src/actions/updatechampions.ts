@@ -93,6 +93,9 @@ export class updateChampions {
             Rammus:
                 "https://raw.communitydragon.org/latest/game/assets/characters/rammus/hud/armordillo_square.png",
 
+            Skarner:
+                "https://raw.communitydragon.org/latest/game/assets/characters/skarner/hud/skarner_square_0.skarner_rework.png",
+
             Smolder:
                 "https://raw.communitydragon.org/latest/game/assets/characters/smolder/hud/smolder_square_0.smolder.png",
 

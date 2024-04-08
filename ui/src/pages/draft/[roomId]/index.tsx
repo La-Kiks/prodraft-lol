@@ -1,9 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { FormEvent, useEffect, useState } from "react";
+import { Router, useRouter } from "next/router";
 import io, { Socket } from 'socket.io-client';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "ws://127.0.0.1:3001";
-console.log(SOCKET_URL)
+
+export interface Champion {
+    lol_id: string;
+    name: string;
+    alt_name: string;
+    tags: string;
+    champ_sq: string;
+    champ_ct: string;
+    pick_v: string;
+    ban_v: string;
+}
 
 function useSocket() {
     const [socket, setSocket] = useState<Socket | null>(null);
@@ -26,27 +37,40 @@ function useSocket() {
     return socket;
 }
 
-// `app/dashboard/page.tsx` is the UI for the `/dashboard` URL
-export default function Page() {
 
+export default function DraftPage() {
+    const router = useRouter();
     const socket = useSocket();
+    const [champdata, setChampdata] = useState<{ [key: string]: Champion }>({});
 
 
     useEffect(() => {
         socket?.on('connect', () => {
             console.log("socket connected")
         })
-        socket?.on('socketId', () => {
-            console.log(socket.id)
-        })
-        socket?.emit('hellodraft', () => {
-        })
-    });
+        socket?.emit('draftpage')
+
+        const updateChampData = (data: { [key: string]: Champion }) => {
+            setChampdata(data)
+        }
+        socket?.on('champdata', updateChampData)
+
+        return () => {
+            socket?.off('champdata', updateChampData)
+        }
+    }, [socket]); // This socket unsure to run the effect on socket change only.
+
+
+    const bannerClick = async () => {
+        await router.push(`/`)
+    }
 
 
     return (
-        <main className="flex flex-col p-4 w-full h-screen space-y-0 m-auto max-w-5xl items-center place-content-start bg-slate-600">
-            <h1 className="p-2">Draft Page</h1>
+        <main className="flex flex-col p-0 w-full h-screen space-y-0 m-auto max-w-5xl items-center place-content-start bg-slate-700">
+            <div className="p-2 mt-8 mb-8 flex content-start justify-center text-4xl text-white hover:text-slate-300">
+                <h1 onClick={() => bannerClick()}>Prodraft.lol</h1>
+            </div>
 
             {/* DRAFT HEADER :
             BOX 1 : Blue team name  + blue teams bans (x3)
@@ -106,26 +130,19 @@ export default function Page() {
                         <div className="p-1">Search bar</div>
                     </div>
                     <div className="grid gap-2 overflow-y-scroll grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 ">
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
-                        <div>Placeholder</div>
+
+                        {Object.entries(champdata).length > 0 ? (
+                            Object.entries(champdata).map(([championName, champion]) => (
+                                <div key={championName}>
+                                    <h2>{champion.name}</h2>
+                                    <img src={champion.champ_sq} alt={champion.name} />
+                                </div>
+                            ))
+                        ) : (
+                            <h1>Loading...</h1> // Show a loading message while waiting for data
+                        )}
+
+
                     </div>
                 </div>
                 <div className="box1 flex flex-col m-1 p-1 h-full justify-around items-end basis-3/12 bg-red-200">
@@ -146,7 +163,7 @@ export default function Page() {
             */}
 
             <div className="draft-footer">
-                <Button className="w-24 h-12 p-2 text-lg bg-amber-300 text-slate-950"> Validate </Button>
+                <Button className="w-24 h-12 p-2 m-1 text-lg flex-shrink-0 bg-amber-500 hover:bg-amber-300 border-amber-500 hover:border-amber-300  border-4 text-slate-900 rounded"> Validate </Button>
             </div>
 
         </main>

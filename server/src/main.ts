@@ -17,6 +17,9 @@ const PORT = parseInt(process.env.PORT || '3001', 10) // For the SERVER ; avoid 
 const HOST = process.env.HOST || '0.0.0.0'
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000'; // For the UI
 const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL
+const DATACHAMP = new LocalData()
+// Updata my champions json if version changed
+DATACHAMP.createJson()
 
 
 // Fixing io decorator typescript error
@@ -37,6 +40,7 @@ const subscriber = new Redis(UPSTASH_REDIS_REST_URL)
 
 async function buildServer() {
     const app = fastify();
+    const champData = await DATACHAMP.getAllChampions()
 
     await app.register(fastifyCors, {
         origin: CORS_ORIGIN,
@@ -47,26 +51,22 @@ async function buildServer() {
 
     app.io.on('connection', (socket: any) => {
         console.log('Connected')
+        const id = Math.random().toString(21).slice(5)
+        socket.emit('roomId', id)
+        console.log(id)
 
-        // Testing -- works with POSTMAN
-        socket.emit('socketId', socket.id)
-
-        socket.on('hellodraft', () => {
-            console.log('Socket in /draft')
+        socket.on('draftpage', () => {
+            socket.emit('champdata', champData)
+            console.log('DATA CHAMP SENT')
         })
 
 
-        //
         socket.on('disconnect', () => {
             console.log('Disconnected')
         })
     })
 
     app.get('/healthcheck', async () => {
-        const data = new LocalData()
-        console.log(data.getAllChampions())
-
-
 
 
 
