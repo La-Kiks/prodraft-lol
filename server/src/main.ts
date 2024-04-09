@@ -57,7 +57,7 @@ async function buildServer() {
 
         socket.on('draftpage', () => {
             socket.emit('champdata', champData)
-            console.log('DATA CHAMP SENT')
+            console.log('Champ data sent')
         })
 
 
