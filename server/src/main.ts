@@ -9,6 +9,7 @@ import { RedisDatabase, Champion } from "./actions/database"
 import { updateChampions } from "./actions/updatechampions"
 import { Data } from "ws"
 import { LocalData } from "./actions/localbase"
+import { isObject } from "util"
 
 
 dotenv.config();
@@ -18,9 +19,10 @@ const HOST = process.env.HOST || '0.0.0.0'
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000'; // For the UI
 const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL
 const DATACHAMP = new LocalData()
+
+
 // Updata my champions json if version changed
 DATACHAMP.createJson()
-
 
 // Fixing io decorator typescript error
 declare module "fastify" {
@@ -34,9 +36,9 @@ if (!UPSTASH_REDIS_REST_URL) {
     process.exit(1)
 }
 
-
 const publisher = new Redis(UPSTASH_REDIS_REST_URL)
 const subscriber = new Redis(UPSTASH_REDIS_REST_URL)
+
 
 async function buildServer() {
     const app = fastify();
@@ -50,14 +52,24 @@ async function buildServer() {
 
 
     app.io.on('connection', (socket: any) => {
-        console.log('Connected')
-        const id = Math.random().toString(21).slice(5)
-        socket.emit('roomId', id)
-        console.log(id)
+        // Generate the ID on the base page
+        socket.on('join server', () => {
+            console.log('Connected')
+            const id = Math.random().toString(21).slice(5).toString()
+            socket.emit('roomId', id)
+            console.log(id)
+        })
 
-        socket.on('draftpage', () => {
-            socket.emit('champdata', champData)
+        // Deliver the champData to the draft pages (blue red spec) to create the grid
+        socket.on('draftpage', (roomId: string, cb: (arg0: any) => void) => {
+            socket.join(`${roomId}`)
+            cb(champData) // call back that send champData
             console.log('Champ data sent')
+        })
+
+        socket.on('playing', ({ aa, bb, cc }: { aa: string; bb: string; cc: string }) => {
+            const logic = aa + bb + cc
+
         })
 
 
@@ -67,9 +79,6 @@ async function buildServer() {
     })
 
     app.get('/healthcheck', async () => {
-
-
-
         return {
             status: "ok",
             port: PORT,

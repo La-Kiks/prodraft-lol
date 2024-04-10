@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 import io, { Socket } from 'socket.io-client';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "ws://127.0.0.1:3001";
-const PLAYER = 'SPEC'
+const PLAYER = 'BLUE'
 let ROOM_ID = ''
+
 
 export interface Champion {
     lol_id: string;
@@ -40,8 +41,8 @@ function useSocket() {
 }
 
 
-export default function DraftPage() {
-    // useState declarations :
+export default function BlueDraftPage() {
+    // useState declarations
     const [champdata, setChampdata] = useState<{ [key: string]: Champion }>({});
     const [selectedChamp, setSelectedChamp] = useState<{ [key: string]: string }>({
         BB1: '', RB1: '',
@@ -62,16 +63,45 @@ export default function DraftPage() {
     });
     const [slotIndex, setSlotIndex] = useState(0)
     const [timer, setTimer] = useState(60)
-
-    // Declarations :
-    const helmetUrl = "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-collections/global/default/icon-helmet.png"
+    const [gamePhase, setGamePhase] = useState(["WAITING", "PLAYING", "OVER"])
+    const [gamePhaseIndex, setGamePhaseIndex] = useState(0)
+    const [turn, setTurn] = useState(["BLUE", "RED"])
+    const [turnIndex, setTurnIndex] = useState(0)
+    // Other declarations
     const router = useRouter();
     const { ROOM_ID, blueName, redName } = router.query as { ROOM_ID: string; blueName: string; redName: string; }
     const socket = useSocket();
+    const helmetUrl = "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-collections/global/default/icon-helmet.png"
     const slotNames = Object.keys(selectedChamp);
 
+    // Functions : 
+    // On socket refresh get champions data from the server (for the grid)
+    useEffect(() => {
+        socket?.on('connect', () => {
+            console.log("socket connected")
+        })
+        socket?.emit('draftpage', ROOM_ID, (data: { [key: string]: Champion }) => setChampdata(data)) // get the champdata via call back
 
-    // Functions :
+    }, [socket]); // This [socket] insure to run the effect on socket change only.
+
+    // Socket for the draft play
+    useEffect(() => {
+        const payload = {
+            roomId: ROOM_ID,
+            gamePhase: gamePhase[gamePhaseIndex],
+            player: PLAYER,
+            turn: turn[turnIndex]
+        }
+        socket?.emit("playing", payload)
+    })
+
+    // Add selected champions to the selectedChamp object 
+    const champSelected = (champUrl: string) => {
+        const slotName = slotNames[slotIndex]
+        setSelectedChamp({ ...selectedChamp, [slotName]: champUrl });
+    }
+
+    // Timer ; Countdown
     useEffect(() => {
         const countdown = setTimeout(() => {
             if (timer > 0) {
@@ -85,11 +115,7 @@ export default function DraftPage() {
         return () => clearTimeout(countdown); // Cleanup timer on component unmount
     }, [timer])
 
-    const champSelected = (champUrl: string) => {
-        const slotName = slotNames[slotIndex]
-        setSelectedChamp({ ...selectedChamp, [slotName]: champUrl });
-    }
-
+    // Validate the current selection when you press button or timer = 0 ; reset the timer.
     const handleValidate = () => {
         setSlotIndex(prevIndex => {
             const nextIndex = prevIndex + 1;
@@ -98,30 +124,12 @@ export default function DraftPage() {
         setTimer(60);
     }
 
-
-
-    useEffect(() => {
-        socket?.on('connect', () => {
-            console.log("socket connected")
-        })
-        socket?.emit('draftpage', ROOM_ID)
-
-        const updateChampData = (data: { [key: string]: Champion }) => {
-            setChampdata(data)
-        }
-        socket?.on('champdata', updateChampData)
-
-        return () => {
-            socket?.off('champdata', updateChampData)
-        }
-    }, [socket]); // This socket insure to run the effect on socket change only.
-
-
+    // Redirect to the base page
     const bannerClick = async () => {
         await router.push(`/`)
     }
 
-
+    // Return view : 
     return (
         <main className="flex flex-col p-0 w-full minh600px h-screen space-y-0 m-auto max-w-5xl items-center place-content-start bg-slate-700">
             <div className="p-2 mt-8 mb-8 flex content-start justify-center text-4xl text-white hover:text-slate-300">
