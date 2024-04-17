@@ -65,12 +65,12 @@ export default function DraftLinksPage() {
     }
 
     return (
-        <main className="flex flex-col p-4 h-screen w-full max-w-3xl m-auto bg-slate-700">
-            <div className="p-2 mt-28 mb-64 flex content-start justify-center text-8xl text-white hover:text-slate-300">
+        <main className="flex flex-col p-4 h-screen w-full m-auto items-center bg-slate-700">
+            <div className="p-2 md:mt-28 md:mb-64 md:text-8xl mt-14 mb-14 text-5xl flex  justify-center  text-white hover:text-slate-300">
                 <h1>Prodraft.lol</h1>
             </div>
-            <form onSubmit={handleSubmit} className="flex justify-center w-auto">
-                <div className="flex flex-col items-center w-6/12 ">
+            <form onSubmit={handleSubmit} className="flex justify-center  min-w-3xl max-w-3xl">
+                <div className="flex flex-col  ">
                     <div className="flex items-center p-2 my-2 border border-blue-500 w-full text-white   hover:outline-none hover:ring hover:ring-blue-500">
                         <input defaultValue={blueLink}
                             onClick={() => blueClick(ROOM_ID)}
@@ -124,12 +124,6 @@ export default function DraftLinksPage() {
                     </Button>
                 </div>
             </form>
-            <div className="flex flex-col items-center my-8">
-                <Button onClick={() => specClick(ROOM_ID)}
-                    className="flex-shrink-0 bg-amber-500 hover:bg-amber-300 border-amber-500 hover:border-amber-300  border-4 text-slate-900 text-base p-2 m-2 rounded">
-                    TEST
-                </Button>
-            </div>
         </main>
     )
 }

@@ -70,12 +70,12 @@ export default function Home() {
   }
 
   return (
-    <main className="flex flex-col p-4 h-screen w-full max-w-3xl m-auto bg-slate-700">
-      <div className="p-2 mt-28 mb-64 flex content-start justify-center text-8xl text-white hover:text-slate-300">
+    <main className="flex flex-col p-4 h-screen w-full items-center  m-auto bg-slate-700">
+      <div className="p-2 md:mt-28 md:mb-64 md:text-8xl mt-14 mb-14 text-5xl flex content-start justify-center  text-white hover:text-slate-300">
         <h1>Prodraft.lol</h1>
       </div>
-      <form onSubmit={handleSubmit} className="flex justify-center">
-        <div className="flex flex-col items-center p-2 m-2 w-6/12 ">
+      <form onSubmit={handleSubmit} className="flex ">
+        <div className="flex flex-col items-center p-2 m-2 ">
           <input value={blueName}
             onChange={(e) => setBlueName(e.target.value)}
             className="p-2 m-2 bg-transparent border border-blue-500 w-full text-white mr-3 py-1 px-2  focus:outline-none focus:ring focus:ring-blue-500"

@@ -17,6 +17,9 @@ dependencies:
   fastify:
     specifier: ^4.26.2
     version: 4.26.2
+  fastify-plugin:
+    specifier: ^4.5.1
+    version: 4.5.1
   fastify-socket.io:
     specifier: ^5.0.0
     version: 5.0.0(fastify@4.26.2)
@@ -26,6 +29,12 @@ dependencies:
   socket.io:
     specifier: ^4.7.5
     version: 4.7.5
+  validator:
+    specifier: ^13.11.0
+    version: 13.11.0
+  zod:
+    specifier: ^3.22.4
+    version: 3.22.4
 
 devDependencies:
   '@types/node':
@@ -947,6 +956,11 @@ packages:
       punycode: 2.3.1
     dev: false
 
+  /validator@13.11.0:
+    resolution: {integrity: sha512-Ii+sehpSfZy+At5nPdnyMhx78fEoPDkR2XW/zimHEL3MyGJQOCQ7WeP20jPYRz7ZCpcKLB21NxuXHF3bxjStBQ==}
+    engines: {node: '>= 0.10'}
+    dev: false
+
   /vary@1.1.2:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
@@ -967,4 +981,8 @@ packages:
 
   /yallist@4.0.0:
     resolution: {integrity: sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A==}
+    dev: false
+
+  /zod@3.22.4:
+    resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
     dev: false

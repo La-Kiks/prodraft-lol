@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import io, { Socket } from 'socket.io-client';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "ws://127.0.0.1:3001";
-const PLAYER = 'RED'
-let ROOM_ID = ''
+const PLAYER = 'red'
+
 
 export interface Champion {
     lol_id: string;
@@ -16,6 +16,14 @@ export interface Champion {
     champ_ct: string;
     pick_v: string;
     ban_v: string;
+}
+
+type DraftPayload = {
+    ROOM_ID: string,
+    phase: string,
+    pturn: string,
+    idx: number,
+    champs: { [key: string]: string }
 }
 
 function useSocket() {
@@ -60,67 +68,159 @@ export default function RedDraftPage() {
         BP4: '', BP5: '',
         RP5: ''
     });
+    const [selectTracker, setSelectTracker] = useState<boolean>(true)
     const [slotIndex, setSlotIndex] = useState(0)
-    const [timer, setTimer] = useState(60)
-    // Other declarations :
+    const [timer, setTimer] = useState(69)
+    const [ready, setReady] = useState<boolean>(false)
+    const [confirmButton, setConfirmButton] = useState<string>('Ready')
+    const [gamePhase, setGamePhase] = useState<string>('WAITING')
+    const [turn, setTurn] = useState('')
+
+    // Other declarations
     const router = useRouter();
     const { ROOM_ID, blueName, redName } = router.query as { ROOM_ID: string; blueName: string; redName: string; }
     const socket = useSocket();
     const helmetUrl = "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-collections/global/default/icon-helmet.png"
     const slotNames = Object.keys(selectedChamp);
 
-    // Functions :
 
-    // On socket refresh get champions data from the server (for the grid)
+    // Functions : 
+    // INITIALIZE STEP 0 - champ grid + waiting room + not ready
+    // F5
     useEffect(() => {
         socket?.on('connect', () => {
-            console.log("socket connected")
+            console.log("Socket connected")
+            socket?.emit('draftpage', (data: { [key: string]: Champion }) => setChampdata(data))
+            socket?.emit('new:room', ROOM_ID)
+
+            socket?.on(`state:${ROOM_ID}`, (draftData: DraftPayload) => {
+                if (draftData) {
+                    const { ROOM_ID, phase, pturn, idx, champs } = draftData
+                    setGamePhase(phase)
+                    setTurn(pturn)
+                    setSlotIndex(idx)
+                    setSelectedChamp(champs)
+                }
+            })
+
+            socket?.on(`timer:${ROOM_ID}`, (time: number) => {
+                setTimeout(() => {
+                    setTimer(time)
+                }, 500)
+
+                console.log("time :", time)
+            })
         })
-        socket?.emit('draftpage', ROOM_ID)
 
-        const updateChampData = (data: { [key: string]: Champion }) => {
-            setChampdata(data)
+    }, [ROOM_ID]);
+
+
+
+    socket?.on(`start:${ROOM_ID}`, () => {
+        setGamePhase('PLAYING')
+        setTurn('blue')
+    })
+
+
+    socket?.on(`click:blue:${ROOM_ID}`, (slotName, slotUrl) => {
+        setSelectedChamp({ ...selectedChamp, [slotName]: slotUrl })
+    })
+
+
+    // CHAMPION CLICK
+    let champSelected = (champUrl: string) => {
+        if (gamePhase == 'PLAYING') {
+            if (turn == PLAYER) {
+                const slotName = slotNames[slotIndex]
+                setSelectedChamp({ ...selectedChamp, [slotName]: champUrl })
+                setSelectTracker(!selectTracker)
+            }
         }
-        socket?.on('champdata', updateChampData)
-
-        return () => {
-            socket?.off('champdata', updateChampData)
-        }
-    }, [socket]); // This [socket] insure to run the effect on socket change only.
-
-    // Add selected champions to the selectedChamp object 
-    const champSelected = (champUrl: string) => {
-        const slotName = slotNames[slotIndex]
-        setSelectedChamp({ ...selectedChamp, [slotName]: champUrl });
     }
 
-    // Timer ; Countdown
     useEffect(() => {
-        const countdown = setTimeout(() => {
-            if (timer > 0) {
-                setTimer(prevTimer => prevTimer - 1);
-            } else {
-                handleValidate();  // Reset timer to 60 seconds included in handleValidate()
+        const slotName = slotNames[slotIndex]
+        const slotUrl = selectedChamp[slotName]
+        const clickObject = { ROOM_ID, slotName, slotUrl }
+        socket?.emit(`click:red`, clickObject)
+    }, [selectTracker])         // Send champion on click
 
-            }
-        }, 1000); // Update timer every second
+    // DRAFT GAMES & TURNS
+    socket?.on(`validate:${ROOM_ID}`, (payload: DraftPayload) => {
+        if (payload) {
+            const { ROOM_ID, phase, pturn, idx, champs } = payload
+            setGamePhase(phase)
+            setTurn(pturn)
+            setSlotIndex(idx)
+            setSelectedChamp(champs)
+        } else {
+            console.log('error receiving validation')
+        }
+    })
 
-        return () => clearTimeout(countdown); // Cleanup timer on component unmount
+    // timer logc
+    useEffect(() => {
+        if (gamePhase == 'PLAYING') {
+            const countdown = setTimeout(() => {
+                if (timer > 0) {
+                    setTimer(prevTimer => prevTimer - 1);
+                } else {
+                    handleValidate();
+                }
+            }, 1000);
+            return () => clearTimeout(countdown)
+        }
     }, [timer])
 
-    // Validate the current selection when you press button or timer = 0 ; reset the timer.
-    const handleValidate = () => {
-        setSlotIndex(prevIndex => {
-            const nextIndex = prevIndex + 1;
-            return nextIndex >= slotNames.length ? 0 : nextIndex; // Reset to 0 if outside range
-        });
-        setTimer(60);
-    }
+    // Reset timer on new idx (new pick/ban)
+    useEffect(() => {
+        if (gamePhase == 'PLAYING') {
+            setTimer(60)
+        }
+    }, [slotIndex])
 
     // Redirect to the base page
     const bannerClick = async () => {
         await router.push(`/`)
     }
+
+    // Ready check
+    useEffect(() => {
+        socket?.emit(`ready:${PLAYER}`, ({ ROOM_ID, ready }))
+    }, [ready])
+
+    // Change button content with gamephase
+    useEffect(() => {
+        if (gamePhase == 'PLAYING') {
+            setConfirmButton('Confirm')
+            setTimer(60)
+        } else if (gamePhase == 'OVER') {
+            setConfirmButton('New draft')
+        }
+    }, [gamePhase])
+
+    // change validate button behaviors
+    const handleValidate = () => {
+        if (gamePhase == 'WAITING') {
+            setReady(!ready)
+        }
+        if (gamePhase == 'PLAYING') {
+            if (turn == `${PLAYER}`) {
+                const payload: DraftPayload = {
+                    ROOM_ID: ROOM_ID,               // string 
+                    phase: gamePhase,               // waiting, playing, over
+                    pturn: turn,                     // blue/red
+                    idx: slotIndex,                 // Would be the turn from 0 to 20 
+                    champs: selectedChamp           // The whole table
+                }
+                socket?.emit(`validate:red`, payload)
+            }
+        }
+        if (gamePhase == 'OVER') {
+            bannerClick()
+        }
+    }
+
 
     // Return the page view :
     return (
@@ -134,6 +234,11 @@ export default function RedDraftPage() {
             BOX 2 : Timer
             BOX 3 : Red team name + red team bans (x3)
             */}
+            <div className="m-2 p-2 text-white">
+                <h3>{PLAYER}</h3>
+                <h3>{gamePhase}</h3>
+                <h3>{turn}</h3>
+            </div>
 
             <div className="draft-header flex p-2 w-full my-2 bg-slate-200 items-center  ">
                 <div className="box1 basis-5/12 bg-blue-100 p-1">
@@ -334,7 +439,7 @@ export default function RedDraftPage() {
 
             <div className="draft-footer">
                 <Button className="w-24 h-12 p-2 mt-12 mb-24 text-lg flex-shrink-0 bg-amber-500 hover:bg-amber-300 border-amber-500 hover:border-amber-300  border-4 text-slate-900 rounded"
-                    onClick={handleValidate}> Validate </Button>
+                    onClick={handleValidate}> {confirmButton} </Button>
             </div>
 
         </main>
