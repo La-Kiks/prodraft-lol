@@ -4,6 +4,13 @@ export interface ServerToClientEvents extends Record<string, unknown> { }
 export interface SocketData extends Record<string, unknown> { }
 
 
+
+
+// extract the inferred type
+//type User = z.infer<typeof User>;
+// { username: string }
+
+
 export interface Champion {
     lol_id: string;
     name: string;
@@ -24,19 +31,19 @@ export interface DraftPayload {
 }
 
 export interface DraftChamps {
-    BB1: '', RB1: '',
-    BB2: '', RB2: '',
-    BB3: '', RB3: '',
+    BB1: string, RB1: string,
+    BB2: string, RB2: string,
+    BB3: string, RB3: string,
 
-    BP1: '',
-    RP1: '', RP2: '',
-    BP2: '', BP3: '',
-    RP3: '',
+    BP1: string,
+    RP1: string, RP2: string,
+    BP2: string, BP3: string,
+    RP3: string,
 
-    RB4: '', BB4: '',
-    RB5: '', BB5: '',
+    RB4: string, BB4: string,
+    RB5: string, BB5: string,
 
-    RP4: '',
-    BP4: '', BP5: '',
-    RP5: ''
+    RP4: string,
+    BP4: string, BP5: string,
+    RP5: string
 }

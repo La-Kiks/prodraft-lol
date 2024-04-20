@@ -65,12 +65,12 @@ export default function DraftLinksPage() {
     }
 
     return (
-        <main className="flex flex-col p-4 h-screen w-full m-auto items-center bg-slate-700">
+        <main className="flex flex-col p-4 h-screen w-full m-auto items-center bg-slate-800">
             <div className="p-2 md:mt-28 md:mb-64 md:text-8xl mt-14 mb-14 text-5xl flex  justify-center  text-white hover:text-slate-300">
                 <h1>Prodraft.lol</h1>
             </div>
-            <form onSubmit={handleSubmit} className="flex justify-center  min-w-3xl max-w-3xl">
-                <div className="flex flex-col  ">
+            <form onSubmit={handleSubmit} className="flex justify-center  w-full  ">
+                <div className="flex flex-col  w-full max-w-sm  ">
                     <div className="flex items-center p-2 my-2 border border-blue-500 w-full text-white   hover:outline-none hover:ring hover:ring-blue-500">
                         <input defaultValue={blueLink}
                             onClick={() => blueClick(ROOM_ID)}
@@ -119,7 +119,7 @@ export default function DraftLinksPage() {
                             </svg>
                         }
                     </div>
-                    <Button className="flex-shrink-0 bg-amber-500 hover:bg-amber-300 border-amber-500 hover:border-amber-300  border-4 text-slate-900 text-base p-2 m-2 rounded">
+                    <Button className="flex-shrink-0  bg-amber-500 hover:bg-amber-300 border-amber-500 hover:border-amber-300  border-4 text-slate-900 text-base p-2 m-2 rounded">
                         Remake draft links
                     </Button>
                 </div>

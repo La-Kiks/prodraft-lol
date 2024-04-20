@@ -8,9 +8,10 @@ import { RedisDatabase } from "./actions/database"
 import { LocalData } from "./actions/localbase"
 import { DraftGame } from "./actions/playing"
 import { DraftPayload } from "./actions/type"
-import { schemaDraft, schemaOnClick, schemaRoomId, schemaRoomReady } from "./actions/schema"
+import { DraftInfos, RoomInfos, schClick, schReadyCheck, schValidate, schemaDraft, schemaOnClick, schemaRoomId, schemaRoomReady } from "./actions/schema"
 import { DefaultEventsMap } from "socket.io/dist/typed-events"
 import { log } from "console";
+import { Room } from "./model/room";
 
 
 dotenv.config();
@@ -21,38 +22,27 @@ const HOST = process.env.HOST || '0.0.0.0'
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000'; // For the UI
 const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL
 const DATACHAMP = new LocalData()
-type RoomStatus = [boolean, boolean]
-const roomsReady: { [roomID: string]: RoomStatus } = {}
-const DRAFT_DATA: { [roomID: string]: DraftPayload } = {}
+
+
+
 const DRAFT_TIMER: { [roomID: string]: number } = {}
 const DRAFT = new DraftGame()
-const DEFAULT_DRAFT: DraftPayload = {
-    ROOM_ID: '00000',
-    phase: 'PLAYING',
-    pturn: 'blue',
-    idx: 0,
-    champs: {
-        BB1: '', RB1: '',
-        BB2: '', RB2: '',
-        BB3: '', RB3: '',
 
-        BP1: '',
-        RP1: '', RP2: '',
-        BP2: '', BP3: '',
-        RP3: '',
 
-        RB4: '', BB4: '',
-        RB5: '', BB5: '',
 
-        RP4: '',
-        BP4: '', BP5: '',
-        RP5: ''
+
+const ROOMS: { [ROOM_ID: string]: Room } = {}
+
+function getOrCreateRoom(roomId: string): Room {
+    if (!ROOMS[roomId]) {
+        ROOMS[roomId] = new Room(roomId)
     }
+    return ROOMS[roomId]
 }
-//const SPEC_COUNT: { [roomID: string]: number }
 
-
-
+function getRoom(roomId: string): Room | undefined {
+    return ROOMS[roomId]
+}
 
 
 // Update my champions json if version changed
@@ -107,21 +97,20 @@ async function buildServer() {
             socket.on('new:room', (ROOM_ID: string) => {
                 socket.join(ROOM_ID)
 
-                // Check if the lobby already exits (F5 handle)
-                if (roomsReady[ROOM_ID]) {
-                    console.log("Room exist for :", ROOM_ID, "state", roomsReady[ROOM_ID])
-                    if (DRAFT_DATA[ROOM_ID]) {
-                        console.log("DRAFT DATA exists for this room.")
-                        const myDraftData = DRAFT_DATA[ROOM_ID]
-                        app.io.to(ROOM_ID).emit(`state:${ROOM_ID}`, myDraftData)
-                    }
 
+                // Check if room exits to send the current state of the room
+                const room = getRoom(ROOM_ID)
+                if (room) {
+                    console.log('Room exist, sending state to :', ROOM_ID)
+                    const state = room.getState()
+                    app.io.to(ROOM_ID).emit(`state:${ROOM_ID}`, state)
+
+                    // TIMER for ROOM
                     if (DRAFT_TIMER[ROOM_ID]) {
                         console.log("Timer exists for this room")
                         app.io.to(ROOM_ID).emit(`timer:${ROOM_ID}`, DRAFT_TIMER[ROOM_ID])
                     }
                 }
-
             })
 
             //
@@ -130,118 +119,97 @@ async function buildServer() {
             // #3 Validate the choice, save the draft server side & send it to the room
             //
 
-            socket.on('ready:blue', async ({ ROOM_ID, ready }: { ROOM_ID: string, ready: boolean }) => {
+            socket.on('ready:blue', async (payload: unknown) => {
                 try {
-                    schemaRoomReady.parse({ ROOM_ID, ready })
-                    if (!roomsReady[ROOM_ID]) {
-                        roomsReady[ROOM_ID] = [false, false]
-                    }
-                    roomsReady[ROOM_ID][0] = ready
-                    console.log("ready:blue", roomsReady[ROOM_ID])
-                    if (roomsReady[ROOM_ID][0] == true && roomsReady[ROOM_ID][1] == true) {
+                    const { ROOM_ID, ready } = schReadyCheck.parse(payload)
+                    const room = getOrCreateRoom(ROOM_ID)
+                    room.setBlueSideReady(ready)
+                    console.log('ready:blue')
+
+                    if (room.isReady()) {
                         app.io.to(ROOM_ID).emit(`start:${ROOM_ID}`)
-                        // initiate Draft object
-                        if (!DRAFT_DATA[ROOM_ID]) {
-                            DRAFT_DATA[ROOM_ID] = DEFAULT_DRAFT
-                            console.log("Initiate DRAFTDATA for :", ROOM_ID)
-                        }
-                        // initiate the DRAFT_TIMER
                         DRAFT.countdown(60, (value) => {
                             DRAFT_TIMER[ROOM_ID] = value
                         })
                     }
                 } catch (e) {
-                    console.log('Type error')
-                    return
+                    console.error('ready:blue error', e)
                 }
             })
 
-            socket.on('click:blue', async (clickObject: object) => {
+            socket.on('click:blue', async (payload: unknown) => {
                 try {
-                    schemaOnClick.parse(clickObject)
-                    const { ROOM_ID, slotName, slotUrl } = clickObject as { ROOM_ID: string, slotName: string, slotUrl: string }
-                    app.io.to(ROOM_ID).emit(`click:blue:${ROOM_ID}`, slotName, slotUrl)
+                    const { ROOM_ID, idx, currentChamp } = schClick.parse(payload)
+                    app.io.to(ROOM_ID).emit(`click:blue:${ROOM_ID}`, idx, currentChamp)
                 } catch (e) {
-                    console.log('click:blue error')
-                    return
+                    console.error('click:blue error', e)
                 }
             })
 
-            socket.on('validate:blue', async (payload: DraftPayload) => {
+            socket.on('validate:blue', async (payload: unknown) => {
                 try {
-                    // schemaOnClick.parse(payload)
-                    const ROOM_ID = payload['ROOM_ID']
-                    const newPayload: DraftPayload = DRAFT.draftStep(payload) as DraftPayload
-                    app.io.to(ROOM_ID).emit(`validate:${ROOM_ID}`, newPayload)
-                    if (DRAFT_DATA[ROOM_ID]) {
-                        DRAFT_DATA[ROOM_ID] = newPayload
-                        console.log('Updating DRAFT_DATA for :', ROOM_ID)
+                    const { ROOM_ID, idx, currentChamp } = schValidate.parse(payload)
+                    const room = getOrCreateRoom(ROOM_ID)
+                    const step = room.step(idx, currentChamp)
+                    if (step.phase === 'PLAYING') {
+                        app.io.to(ROOM_ID).emit(`validate:${ROOM_ID}`, { idx: step.newIndex, pturn: step.pturn, phase: step.phase })
+                    } else if (step.phase === 'OVER') {
+                        app.io.to(ROOM_ID).emit(`validate:${ROOM_ID}`, { phase: step.phase })
                     }
                     // Reset the timer on validate
                     DRAFT.countdown(60, (value) => {
                         DRAFT_TIMER[ROOM_ID] = value
                     })
                 } catch (e) {
-                    console; log('validate:blue error')
+                    console.error('validate:blue error', e)
                     return
                 }
             })
 
-
-            socket.on('validate:red', async (payload: DraftPayload) => {
+            socket.on('validate:red', async (payload: unknown) => {
                 try {
-                    // schemaOnClick.parse(payload)
-                    const ROOM_ID = payload['ROOM_ID']
-                    const newPayload: DraftPayload = DRAFT.draftStep(payload) as DraftPayload
-                    app.io.to(ROOM_ID).emit(`validate:${ROOM_ID}`, newPayload)
-                    if (DRAFT_DATA[ROOM_ID]) {
-                        DRAFT_DATA[ROOM_ID] = newPayload
-                        console.log('Updating DRAFT_DATA for :', ROOM_ID)
+                    const { ROOM_ID, idx, currentChamp } = schValidate.parse(payload)
+                    const room = getOrCreateRoom(ROOM_ID)
+                    const step = room.step(idx, currentChamp)
+                    if (step.phase === 'PLAYING') {
+                        app.io.to(ROOM_ID).emit(`validate:${ROOM_ID}`, { idx: step.newIndex, pturn: step.pturn, phase: step.phase })
+                    } else if (step.phase === 'OVER') {
+                        app.io.to(ROOM_ID).emit(`validate:${ROOM_ID}`, { phase: step.phase })
                     }
                     // Reset the timer on validate
                     DRAFT.countdown(60, (value) => {
                         DRAFT_TIMER[ROOM_ID] = value
                     })
                 } catch (e) {
-                    console; log('validate:red error')
+                    console.error('validate:red error', e)
                     return
                 }
             })
 
-            socket.on('click:red', async (clickObject: object) => {
+            socket.on('click:red', async (payload: unknown) => {
                 try {
-                    schemaOnClick.parse(clickObject)
-                    const { ROOM_ID, slotName, slotUrl } = clickObject as { ROOM_ID: string, slotName: string, slotUrl: string }
-                    app.io.to(ROOM_ID).emit(`click:red:${ROOM_ID}`, slotName, slotUrl)
+                    const { ROOM_ID, idx, currentChamp } = schClick.parse(payload)
+                    app.io.to(ROOM_ID).emit(`click:red:${ROOM_ID}`, idx, currentChamp)
                 } catch (e) {
-                    console.log('click:red error')
+                    console.error('click:red error', e)
                     return
                 }
             })
 
             socket.on('ready:red', async ({ ROOM_ID, ready }: { ROOM_ID: string, ready: boolean }) => {
                 try {
-                    schemaRoomReady.parse({ ROOM_ID, ready })
-                    if (!roomsReady[ROOM_ID]) {
-                        roomsReady[ROOM_ID] = [false, false]
-                    }
-                    roomsReady[ROOM_ID][1] = ready
-                    console.log("ready:red", roomsReady[ROOM_ID])
-                    if (roomsReady[ROOM_ID][0] == true && roomsReady[ROOM_ID][1] == true) {
+                    schReadyCheck.parse({ ROOM_ID, ready })
+                    const room = getOrCreateRoom(ROOM_ID)
+                    room.setRedSideReady(ready)
+                    console.log('ready:red')
+                    if (room.isReady()) {
                         app.io.to(ROOM_ID).emit(`start:${ROOM_ID}`)
-                        // initiate Draft object
-                        if (!DRAFT_DATA[ROOM_ID]) {
-                            DRAFT_DATA[ROOM_ID] = DEFAULT_DRAFT
-                            console.log("Initiate DRAFTDATA for :", ROOM_ID)
-                        }
-                        // initiate the DRAFT_TIMER
                         DRAFT.countdown(60, (value) => {
                             DRAFT_TIMER[ROOM_ID] = value
                         })
                     }
                 } catch (e) {
-                    console.log('Type error')
-                    return
+                    console.error('ready:red error', e)
                 }
             })
 

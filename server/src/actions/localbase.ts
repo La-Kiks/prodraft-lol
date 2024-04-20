@@ -1,6 +1,5 @@
 // Using a local champions.json file as the "database"
-import { fstat, readFileSync } from "fs";
-import { Champion } from "./database";
+import { readFileSync } from "fs";
 import { updateChampions } from "./updatechampions";
 import { versionIsUpToDate } from "./version";
 import path from "path";
@@ -33,8 +32,5 @@ export class LocalData {
         }
     }
 
-
-
 }
-
 

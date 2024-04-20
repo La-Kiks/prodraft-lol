@@ -5,114 +5,70 @@ import { DraftPayload } from "./type"
 export class DraftGame {
 
 
-    draftStep(payload: DraftPayload) {
-        const { ROOM_ID, phase, pturn, idx, champs } = payload as DraftPayload
-        const newPayload: DraftPayload = { ...payload }
-
+    static draftStep(idx: number): { newIndex: number, pturn: string, phase: 'PLAYING' } | { phase: 'OVER' } {
         switch (idx) {
             // BB1
             case 0:
-                newPayload.idx++
-                newPayload.pturn = "red"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'red', phase: 'PLAYING' }
             // RB1
             case 1:
-                newPayload.idx++
-                newPayload.pturn = "blue"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'blue', phase: 'PLAYING' }
             // BB2
             case 2:
-                newPayload.idx++
-                newPayload.pturn = "red"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'red', phase: 'PLAYING' }
             // RB2
             case 3:
-                newPayload.idx++
-                newPayload.pturn = "blue"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'blue', phase: 'PLAYING' }
             // BB3
             case 4:
-                newPayload.idx++
-                newPayload.pturn = "red"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'red', phase: 'PLAYING' }
             // RB3
             case 5:
-                newPayload.idx++
-                newPayload.pturn = "blue"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'blue', phase: 'PLAYING' }
             // BP1
             case 6:
-                newPayload.idx++
-                newPayload.pturn = "red"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'red', phase: 'PLAYING' }
             // RP1
             case 7:
-                newPayload.idx++
-                newPayload.pturn = "red"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'red', phase: 'PLAYING' }
             // RP2
             case 8:
-                newPayload.idx++
-                newPayload.pturn = "blue"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'blue', phase: 'PLAYING' }
             // BP2
             case 9:
-                newPayload.idx++
-                newPayload.pturn = "blue"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'blue', phase: 'PLAYING' }
             // BP3
             case 10:
-                newPayload.idx++
-                newPayload.pturn = "red"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'red', phase: 'PLAYING' }
             // RP3
             case 11:
-                newPayload.idx++
-                newPayload.pturn = "red"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'red', phase: 'PLAYING' }
             // RB4
             case 12:
-                newPayload.idx++
-                newPayload.pturn = "blue"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'blue', phase: 'PLAYING' }
             // BB4
             case 13:
-                newPayload.idx++
-                newPayload.pturn = "red"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'red', phase: 'PLAYING' }
             // RB5
             case 14:
-                newPayload.idx++
-                newPayload.pturn = "blue"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'blue', phase: 'PLAYING' }
             // BB5
             case 15:
-                newPayload.idx++
-                newPayload.pturn = "red"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'red', phase: 'PLAYING' }
             // RP4
             case 16:
-                newPayload.idx++
-                newPayload.pturn = "blue"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'blue', phase: 'PLAYING' }
             // BP4
             case 17:
-                newPayload.idx++
-                newPayload.pturn = "blue"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'blue', phase: 'PLAYING' }
             // BP5
             case 18:
-                newPayload.idx++
-                newPayload.pturn = "red"
-                return newPayload as DraftPayload
+                return { newIndex: idx + 1, pturn: 'red', phase: 'PLAYING' }
             // RP5
             case 19:
-                newPayload.phase = "OVER"
-                return newPayload as DraftPayload
-
+                return { phase: 'OVER' }
             default:
-                console.log('error draftstep')
-                return
+                throw new Error('Draft Game Error')
         }
     }
 
