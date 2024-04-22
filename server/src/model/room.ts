@@ -30,11 +30,15 @@ export class Room {
     private blueside: Side;
     private redside: Side;
     private draft: Draft;
+    private spectatorsCount: number;
+    public spectatorsList: Array<string>;
 
     constructor(private id: string) {
         this.blueside = new Side()
         this.redside = new Side()
         this.draft = new Draft()
+        this.spectatorsCount = 0
+        this.spectatorsList = []
     }
 
     isReady() {
@@ -56,5 +60,18 @@ export class Room {
         return { draft: this.draft.getState() }
     }
 
+    specCount() {
+        return this.spectatorsCount
+    }
 
+    specCountIncrease(socketId: string) {
+        this.spectatorsList.push(socketId)
+        return this.spectatorsCount++
+    }
+
+    specCountDecrease(socketId: string) {
+        const updateSpecList = this.spectatorsList.filter(spectator => spectator !== socketId)
+        this.spectatorsList = updateSpecList
+        return this.spectatorsCount--
+    }
 }

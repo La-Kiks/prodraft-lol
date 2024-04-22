@@ -1,23 +1,9 @@
 import path from "path"
 import { DownloadFailed } from "../errors/downloadFailedError"
-import { existsSync, fstat, readFileSync, writeFileSync } from "fs"
+import { readFileSync, writeFileSync } from "fs"
 import { urlGen } from "./urlGenerator"
-import { RedisDatabase, Champion } from "./database"
-import { StringDecoder } from "string_decoder"
-import { stringify } from "querystring"
+import { Champion } from "./type"
 import { RecordNotFoundError } from "../errors/recordNotFoundError"
-
-// export interface Champion {
-//     id: string;
-//     lol_id: string;
-//     name: string;
-//     alt_name: string;
-//     tags: string;
-//     champ_sq: string;
-//     champ_ct: string;
-//     pick_v: string;
-//     ban_v: string;
-// }
 
 
 export class updateChampions {
@@ -121,7 +107,7 @@ export class updateChampions {
             alt_name: "",
             tags: "",
             champ_sq: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-collections/global/default/icon-helmet.png",
-            champ_ct: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-collections/global/default/icon-helmet.png",
+            champ_ct: "",
             pick_v: "",
             ban_v: ""
         }

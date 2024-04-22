@@ -4,13 +4,11 @@ import fastifyCors from '@fastify/cors'
 import fastifyIO from "fastify-socket.io";
 import { Server } from "socket.io" // to fix io decorator ts error
 import closeWithGrace from 'close-with-grace'
-import { RedisDatabase } from "./actions/database"
+// import { RedisDatabase } from "./actions/database"
 import { LocalData } from "./actions/localbase"
 import { DraftGame } from "./actions/playing"
-import { DraftPayload } from "./actions/type"
-import { DraftInfos, RoomInfos, schClick, schReadyCheck, schValidate, schemaDraft, schemaOnClick, schemaRoomId, schemaRoomReady } from "./actions/schema"
+import { schClick, schReadyCheck, schRoomID, schValidate } from "./actions/schema"
 import { DefaultEventsMap } from "socket.io/dist/typed-events"
-import { log } from "console";
 import { Room } from "./model/room";
 
 
@@ -44,6 +42,17 @@ function getRoom(roomId: string): Room | undefined {
     return ROOMS[roomId]
 }
 
+function findRoomIdBySocketId(socketId: string): string | undefined {
+    for (const roomId in ROOMS) {
+        if (ROOMS.hasOwnProperty(roomId)) {
+            const room = ROOMS[roomId];
+            if (room.spectatorsList.includes(socketId)) {
+                return roomId;
+            }
+        }
+    }
+    return undefined;
+}
 
 // Update my champions json if version changed
 DATACHAMP.createJson()
@@ -94,24 +103,47 @@ async function buildServer() {
                 cb(champData) // call back that send champData
                 console.log('Champ data sent')
             })
-            socket.on('new:room', (ROOM_ID: string) => {
-                socket.join(ROOM_ID)
+            socket.on('new:room', (ROOM_ID: unknown) => {
+                const roomId = schRoomID.parse(ROOM_ID)
+                socket.join(roomId)
 
 
                 // Check if room exits to send the current state of the room
-                const room = getRoom(ROOM_ID)
+                const room = getRoom(roomId)
                 if (room) {
-                    console.log('Room exist, sending state to :', ROOM_ID)
+                    console.log('Room exist, sending state to :', roomId)
                     const state = room.getState()
-                    app.io.to(ROOM_ID).emit(`state:${ROOM_ID}`, state)
+                    app.io.to(roomId).emit(`state:${roomId}`, state)
 
                     // TIMER for ROOM
-                    if (DRAFT_TIMER[ROOM_ID]) {
+                    if (DRAFT_TIMER[roomId]) {
                         console.log("Timer exists for this room")
-                        app.io.to(ROOM_ID).emit(`timer:${ROOM_ID}`, DRAFT_TIMER[ROOM_ID])
+                        app.io.to(roomId).emit(`timer:${roomId}`, DRAFT_TIMER[roomId])
                     }
                 }
             })
+
+            socket.on('spectate:enter', (ROOM_ID: unknown) => {
+                const roomId = schRoomID.parse(ROOM_ID)
+                const room = getOrCreateRoom(roomId)
+                room.specCountIncrease(socket.id)
+                const specount = room.specCount()
+                if (specount) {
+                    app.io.to(roomId).emit(`specators:count:${roomId}`, specount)
+                }
+
+            })
+
+            socket.on('disconnect', () => {
+                const roomId = findRoomIdBySocketId(socket.id)
+                if (roomId) {
+                    const room = getOrCreateRoom(roomId)
+                    room.specCountDecrease(socket.id)
+                    const specount = room.specCount()
+                    app.io.to(roomId).emit(`specators:count:${roomId}`, specount)
+                }
+            })
+
 
             //
             // #1 Ready check : get ready check from BLUE + RED then send back the START
@@ -213,10 +245,6 @@ async function buildServer() {
                 }
             })
 
-
-            socket.on('disconnect', () => {
-                console.log('Disconnected')
-            })
         })
 
     })
@@ -239,6 +267,7 @@ async function main() {
             host: HOST,
         })
         closeWithGrace({ delay: 2000 }, async ({ signal, err }) => {
+            console.error("Gracious error", err)
             console.log("shutting down")
         })
         console.log(`Server started at http://${HOST}:${PORT}`)
