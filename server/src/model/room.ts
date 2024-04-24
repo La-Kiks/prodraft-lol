@@ -5,7 +5,7 @@ import { Side } from "./side";
 class Draft {
 
     private phase: string = 'WAITING'
-    private pturn: string = 'blue'
+    private pturn: string = 'nobody'
     private idx: number = 0
     private champs: Array<string> = new Array(20).fill('Helmet')
 

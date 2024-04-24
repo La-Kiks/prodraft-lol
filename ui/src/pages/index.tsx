@@ -81,14 +81,16 @@ export default function Home() {
             className="p-2 m-2 bg-transparent border border-blue-500 w-full text-white mr-3 py-1 px-2  focus:outline-none focus:ring focus:ring-blue-500"
             type="text"
             placeholder="Enter blue team name"
-            aria-label="Blue Team Name">
+            aria-label="Blue Team Name"
+            maxLength={16}>
           </input>
           <input value={redName}
             onChange={(e) => setRedName(e.target.value)}
             className="p-2 m-2 bg-transparent border border-red-500 w-full text-white mr-3 py-1 px-2  focus:outline-none focus:ring focus:ring-red-500"
             type="text"
             placeholder="Enter red team name"
-            aria-label="Red Team Name">
+            aria-label="Red Team Name"
+            maxLength={16}>
           </input>
           <Button className="flex-shrink-0 p-2 m-2 bg-amber-500 hover:bg-amber-300 border-amber-500 hover:border-amber-300  border-4 text-slate-900 text-base rounded">
             Create draft

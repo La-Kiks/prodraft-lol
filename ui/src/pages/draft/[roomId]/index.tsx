@@ -189,23 +189,25 @@ export default function SpecDraftPage() {
 
                 <div className="draft-header flex  w-full items-center  ">
                     <div className="box1 basis-5/12  flex flex-col ">
-                        <div className="team-name text-white bg-blue-500 p-1"><h1>{blueName}</h1></div>
+                        <div className={`team-name max-w-48 sm:max-w-96 text-white bg-blue-500 p-1 transition-width duration-500 ${turn === 'red' ? 'w-1/2 ' : 'w-full'}`}>
+                            <h1 className="text-xl overflow-hidden">{blueName}</h1>
+                        </div>
                         <div className="team-bans w-fit flex">
                             {champArray && champArray[0] && champdata && champdata[champArray[0]] && champdata[champArray[0]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[0]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 0) ? 'animate-pulse' : ''}`} alt={champdata[champArray[0]]['name']}
                                     src={champdata[champArray[0]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20"
                                     src={helmetUrl} alt="Helmet placeholder" />
                             )}
                             {champArray && champArray[2] && champdata && champdata[champArray[2]] && champdata[champArray[2]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[2]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 2) ? 'animate-pulse' : ''}`} alt={champdata[champArray[2]]['name']}
                                     src={champdata[champArray[2]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
                             )}
                             {champArray && champArray[4] && champdata && champdata[champArray[4]] && champdata[champArray[4]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[4]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 4) ? 'animate-pulse' : ''}`} alt={champdata[champArray[4]]['name']}
                                     src={champdata[champArray[4]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
@@ -216,22 +218,24 @@ export default function SpecDraftPage() {
                     <div className="box2 basis-2/12 flex justify-center p-1 text-white text-5xl"> {timer} </div>
 
                     <div className="box3 basis-5/12 flex flex-col place-items-end ">
-                        <div className="team-name w-full text-white bg-red-500 flex flex-row-reverse p-1"><h1>{redName}</h1></div>
+                        <div className={`team-name max-w-48 sm:max-w-96 text-white bg-red-500 flex flex-row-reverse p-1 transition-width duration-500 ${turn === 'blue' ? 'w-1/2' : 'w-full '}`}>
+                            <h1 className="text-xl overflow-hidden">{redName}</h1>
+                        </div>
                         <div className="team-bans mx-1 w-fit flex flex-row-reverse ">
                             {champArray && champArray[1] && champdata && champdata[champArray[1]] && champdata[champArray[1]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[1]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 1) ? 'animate-pulse' : ''}`} alt={champdata[champArray[1]]['name']}
                                     src={champdata[champArray[1]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
                             )}
                             {champArray && champArray[3] && champdata && champdata[champArray[3]] && champdata[champArray[3]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[3]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 3) ? 'animate-pulse' : ''}`} alt={champdata[champArray[3]]['name']}
                                     src={champdata[champArray[3]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
                             )}
                             {champArray && champArray[5] && champdata && champdata[champArray[5]] && champdata[champArray[5]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[5]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 5) ? 'animate-pulse' : ''}`} alt={champdata[champArray[5]]['name']}
                                     src={champdata[champArray[5]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
@@ -251,19 +255,19 @@ export default function SpecDraftPage() {
                     <div className="box1 flex flex-col h-full justify-around  basis-1/3 md:basis-3/12 ">
 
                         {champArray && champArray[6] && champdata && champdata[champArray[6]] && champdata[champArray[6]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[6]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 6) ? 'animate-pulse' : ''}`} alt={champdata[champArray[6]]['name']}
                                 src={champdata[champArray[6]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
                         )}
                         {champArray && champArray[9] && champdata && champdata[champArray[9]] && champdata[champArray[9]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[9]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 9) ? 'animate-pulse' : ''}`} alt={champdata[champArray[9]]['name']}
                                 src={champdata[champArray[9]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
                         )}
                         {champArray && champArray[10] && champdata && champdata[champArray[10]] && champdata[champArray[10]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[10]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 10) ? 'animate-pulse' : ''}`} alt={champdata[champArray[10]]['name']}
                                 src={champdata[champArray[10]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
@@ -272,13 +276,13 @@ export default function SpecDraftPage() {
                         <div className="bans2 flex w-fit">
 
                             {champArray && champArray[13] && champdata && champdata[champArray[13]] && champdata[champArray[13]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[13]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 13) ? 'animate-pulse' : ''}`} alt={champdata[champArray[13]]['name']}
                                     src={champdata[champArray[13]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
                             )}
                             {champArray && champArray[15] && champdata && champdata[champArray[15]] && champdata[champArray[15]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[15]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 15) ? 'animate-pulse' : ''}`} alt={champdata[champArray[15]]['name']}
                                     src={champdata[champArray[15]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
@@ -287,13 +291,13 @@ export default function SpecDraftPage() {
                         </div>
 
                         {champArray && champArray[17] && champdata && champdata[champArray[17]] && champdata[champArray[17]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[17]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 17) ? 'animate-pulse' : ''}`} alt={champdata[champArray[17]]['name']}
                                 src={champdata[champArray[17]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
                         )}
                         {champArray && champArray[18] && champdata && champdata[champArray[18]] && champdata[champArray[18]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[18]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 18) ? 'animate-pulse' : ''}`} alt={champdata[champArray[18]]['name']}
                                 src={champdata[champArray[18]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
@@ -314,19 +318,19 @@ export default function SpecDraftPage() {
                     <div className="box3 flex flex-col h-full justify-around items-end basis-1/3 md:basis-3/12 ">
 
                         {champArray && champArray[7] && champdata && champdata[champArray[7]] && champdata[champArray[7]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[7]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 7) ? 'animate-pulse' : ''}`} alt={champdata[champArray[7]]['name']}
                                 src={champdata[champArray[7]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
                         )}
                         {champArray && champArray[8] && champdata && champdata[champArray[8]] && champdata[champArray[8]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[8]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 8) ? 'animate-pulse' : ''}`} alt={champdata[champArray[8]]['name']}
                                 src={champdata[champArray[8]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
                         )}
                         {champArray && champArray[11] && champdata && champdata[champArray[11]] && champdata[champArray[11]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[11]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 11) ? 'animate-pulse' : ''}`} alt={champdata[champArray[11]]['name']}
                                 src={champdata[champArray[11]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
@@ -335,13 +339,13 @@ export default function SpecDraftPage() {
                         <div className="bans2 flex flex-row-reverse  w-fit">
 
                             {champArray && champArray[12] && champdata && champdata[champArray[12]] && champdata[champArray[12]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[12]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 12) ? 'animate-pulse' : ''}`} alt={champdata[champArray[12]]['name']}
                                     src={champdata[champArray[12]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
                             )}
                             {champArray && champArray[14] && champdata && champdata[champArray[14]] && champdata[champArray[14]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[14]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 14) ? 'animate-pulse' : ''}`} alt={champdata[champArray[14]]['name']}
                                     src={champdata[champArray[14]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
@@ -350,13 +354,13 @@ export default function SpecDraftPage() {
                         </div>
 
                         {champArray && champArray[16] && champdata && champdata[champArray[16]] && champdata[champArray[16]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[16]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 16) ? 'animate-pulse' : ''}`} alt={champdata[champArray[16]]['name']}
                                 src={champdata[champArray[16]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
                         )}
                         {champArray && champArray[19] && champdata && champdata[champArray[19]] && champdata[champArray[19]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[19]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 19) ? 'animate-pulse' : ''}`} alt={champdata[champArray[19]]['name']}
                                 src={champdata[champArray[19]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />

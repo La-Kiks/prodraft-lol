@@ -60,6 +60,8 @@ export default function RedDraftPage() {
     const [confirmButton, setConfirmButton] = useState<string>('Ready')
     const [gamePhase, setGamePhase] = useState<string>('WAITING')
     const [turn, setTurn] = useState('')
+    const [champDisabled, setChampDisabled] = useState<{ [name: string]: boolean }>({})
+    const [volume, setVolume] = useState<number>(1)
 
     // Other declarations
     const router = useRouter();
@@ -115,12 +117,27 @@ export default function RedDraftPage() {
     const champSelected = (champName: string) => {
         if (gamePhase == 'PLAYING') {
             if (turn == PLAYER) {
-                const updtChampArray = [...champArray]
-                updtChampArray[slotIndex] = champName
-                setChampArray(updtChampArray)
-                setSelectTracker(!selectTracker)
+                if (!champDisabled[champName]) {
+                    const updtChampArray = [...champArray]
+                    updtChampArray[slotIndex] = champName
+                    setChampArray(updtChampArray)
+                    setSelectTracker(!selectTracker)
+                }
             }
         }
+    }
+
+    // Picked & banned champions => disabled
+    const createDisabledObject = (champArray: string[]): { [name: string]: boolean } => {
+        const disObject: { [name: string]: boolean } = {}
+        champArray.forEach((name) => {
+            if (name === 'Helmet') {
+                disObject[name] = false
+            } else {
+                disObject[name] = true
+            }
+        })
+        return disObject
     }
 
     useEffect(() => {
@@ -155,8 +172,13 @@ export default function RedDraftPage() {
             const countdown = setTimeout(() => {
                 if (timer > 0) {
                     setTimer(prevTimer => prevTimer - 1);
+                    if (timer < 10) {
+                        playSoundTimerLow(volume)
+                    }
                 } else {
-                    handleValidate();
+                    setTimeout(() => {
+                        handleValidate();
+                    }, 200)
                 }
             }, 1000);
             return () => clearTimeout(countdown)
@@ -166,7 +188,13 @@ export default function RedDraftPage() {
     // Reset timer on new idx (new pick/ban)
     useEffect(() => {
         if (gamePhase == 'PLAYING') {
-            setTimer(60)
+            setTimer(30)
+        }
+        if (champArray) {
+            setChampDisabled(createDisabledObject(champArray))
+        }
+        if (turn === 'red') {
+            playSoundTurn(volume)
         }
     }, [slotIndex])
 
@@ -184,7 +212,8 @@ export default function RedDraftPage() {
     useEffect(() => {
         if (gamePhase == 'PLAYING') {
             setConfirmButton('Confirm')
-            setTimer(60)
+            playSoundTurn(volume)
+            setTimer(30)
         } else if (gamePhase == 'OVER') {
             setConfirmButton('New draft')
         }
@@ -192,21 +221,51 @@ export default function RedDraftPage() {
 
     // change validate button behaviors
     const handleValidate = () => {
-        if (gamePhase == 'WAITING') {
-            setReady(!ready)
-        }
-        if (gamePhase == 'PLAYING') {
-            if (turn == `${PLAYER}`) {
-                const currentChamp = champArray[slotIndex]
-                const payload = { ROOM_ID: ROOM_ID, idx: slotIndex, currentChamp: currentChamp }
-                socket?.emit(`validate:red`, payload)
+        setTimeout(() => {
+            if (gamePhase == 'WAITING') {
+                setReady(!ready)
             }
-        }
-        if (gamePhase == 'OVER') {
-            bannerClick()
-        }
+            if (gamePhase == 'PLAYING') {
+                if (turn == `${PLAYER}`) {
+                    const currentChamp = champArray[slotIndex]
+                    const payload = { ROOM_ID: ROOM_ID, idx: slotIndex, currentChamp: currentChamp }
+                    socket?.emit(`validate:red`, payload)
+                    playSoundValidate(volume)
+                }
+            }
+            if (gamePhase == 'OVER') {
+                bannerClick()
+            }
+        }, 200)
+
     }
 
+    //Sounds
+    const playSoundTurn = (volume: number) => {
+        const audio = new Audio('https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-draft-pick-intro.ogg')
+        audio.volume = volume
+        audio.play()
+    }
+
+    const playSoundValidate = (volume: number) => {
+        const audio = new Audio('https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-lockin-button-click.ogg')
+        audio.volume = volume
+        audio.play()
+    }
+
+    const playSoundTimerLow = (volume: number) => {
+        const audio = new Audio('https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-timer-tick.ogg')
+        audio.volume = volume
+        audio.play()
+    }
+
+    const volumeOnOff = () => {
+        if (volume === 1) {
+            setVolume(0)
+        } else if (volume === 0) {
+            setVolume(1)
+        }
+    }
 
     // Return the page view :
     return (
@@ -217,7 +276,7 @@ export default function RedDraftPage() {
 
             <div className="max-w-5xl w-full flex flex-col items-center border rounded border-slate-400 bg-slate-700">
 
-                {/* DRAFT HEADER :bg-slate-100
+                {/* DRAFT HEADER :
                 BOX 1 : Blue team name  + blue teams bans (x3)
                 BOX 2 : Timer
                 BOX 3 : Red team name + red team bans (x3)
@@ -225,23 +284,25 @@ export default function RedDraftPage() {
 
                 <div className="draft-header flex  w-full items-center  ">
                     <div className="box1 basis-5/12  flex flex-col ">
-                        <div className="team-name text-white bg-blue-500 p-1"><h1>{blueName}</h1></div>
+                        <div className={`team-name max-w-48 sm:max-w-96 text-white bg-blue-500 p-1 transition-width duration-500  ${turn === 'red' ? 'w-1/2' : 'w-full'}`}>
+                            <h1 className="text-xl overflow-hidden">{blueName}</h1>
+                        </div>
                         <div className="team-bans w-fit flex">
                             {champArray && champArray[0] && champdata && champdata[champArray[0]] && champdata[champArray[0]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[0]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 0) ? 'animate-pulse' : ''}`} alt={champdata[champArray[0]]['name']}
                                     src={champdata[champArray[0]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20"
                                     src={helmetUrl} alt="Helmet placeholder" />
                             )}
                             {champArray && champArray[2] && champdata && champdata[champArray[2]] && champdata[champArray[2]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[2]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 2) ? 'animate-pulse' : ''}`} alt={champdata[champArray[2]]['name']}
                                     src={champdata[champArray[2]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
                             )}
                             {champArray && champArray[4] && champdata && champdata[champArray[4]] && champdata[champArray[4]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[4]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 4) ? 'animate-pulse' : ''}`} alt={champdata[champArray[4]]['name']}
                                     src={champdata[champArray[4]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
@@ -252,22 +313,24 @@ export default function RedDraftPage() {
                     <div className="box2 basis-2/12 flex justify-center p-1 text-white text-5xl"> {timer} </div>
 
                     <div className="box3 basis-5/12 flex flex-col place-items-end ">
-                        <div className="team-name w-full text-white bg-red-500 flex flex-row-reverse p-1"><h1>{redName}</h1></div>
+                        <div className={`team-name max-w-48 sm:max-w-96 text-white bg-red-500 flex flex-row-reverse p-1 transition-width duration-500 ${turn === 'blue' ? 'w-1/2' : 'w-full '}`}>
+                            <h1 className="text-xl overflow-hidden">{redName}</h1>
+                        </div>
                         <div className="team-bans mx-1 w-fit flex flex-row-reverse ">
                             {champArray && champArray[1] && champdata && champdata[champArray[1]] && champdata[champArray[1]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[1]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 1) ? 'animate-pulse' : ''}`} alt={champdata[champArray[1]]['name']}
                                     src={champdata[champArray[1]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
                             )}
                             {champArray && champArray[3] && champdata && champdata[champArray[3]] && champdata[champArray[3]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[3]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 3) ? 'animate-pulse' : ''}`} alt={champdata[champArray[3]]['name']}
                                     src={champdata[champArray[3]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
                             )}
                             {champArray && champArray[5] && champdata && champdata[champArray[5]] && champdata[champArray[5]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[5]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 5) ? 'animate-pulse' : ''}`} alt={champdata[champArray[5]]['name']}
                                     src={champdata[champArray[5]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
@@ -287,19 +350,19 @@ export default function RedDraftPage() {
                     <div className="box1 flex flex-col h-full justify-around  basis-1/3 md:basis-3/12 ">
 
                         {champArray && champArray[6] && champdata && champdata[champArray[6]] && champdata[champArray[6]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[6]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 6) ? 'animate-pulse' : ''}`} alt={champdata[champArray[6]]['name']}
                                 src={champdata[champArray[6]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
                         )}
                         {champArray && champArray[9] && champdata && champdata[champArray[9]] && champdata[champArray[9]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[9]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 9) ? 'animate-pulse' : ''}`} alt={champdata[champArray[9]]['name']}
                                 src={champdata[champArray[9]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
                         )}
                         {champArray && champArray[10] && champdata && champdata[champArray[10]] && champdata[champArray[10]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[10]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 10) ? 'animate-pulse' : ''}`} alt={champdata[champArray[10]]['name']}
                                 src={champdata[champArray[10]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
@@ -308,13 +371,13 @@ export default function RedDraftPage() {
                         <div className="bans2 flex w-fit">
 
                             {champArray && champArray[13] && champdata && champdata[champArray[13]] && champdata[champArray[13]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[13]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 13) ? 'animate-pulse' : ''}`} alt={champdata[champArray[13]]['name']}
                                     src={champdata[champArray[13]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
                             )}
                             {champArray && champArray[15] && champdata && champdata[champArray[15]] && champdata[champArray[15]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[15]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 15) ? 'animate-pulse' : ''}`} alt={champdata[champArray[15]]['name']}
                                     src={champdata[champArray[15]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
@@ -323,13 +386,13 @@ export default function RedDraftPage() {
                         </div>
 
                         {champArray && champArray[17] && champdata && champdata[champArray[17]] && champdata[champArray[17]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[17]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 17) ? 'animate-pulse' : ''}`} alt={champdata[champArray[17]]['name']}
                                 src={champdata[champArray[17]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
                         )}
                         {champArray && champArray[18] && champdata && champdata[champArray[18]] && champdata[champArray[18]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[18]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 18) ? 'animate-pulse' : ''}`} alt={champdata[champArray[18]]['name']}
                                 src={champdata[champArray[18]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
@@ -370,14 +433,14 @@ export default function RedDraftPage() {
                             {Object.entries(champdata).length > 0 ? (
                                 Object.entries(champdata).map(([championName, champion]) => (
                                     <div key={championName}>
-                                        <img className="w-20 h-20 p-0.5"
+                                        <img className={`w-20 h-20 p-0.5 rounded-md ${champDisabled[championName] ? 'filter grayscale cursor-not-allowed ' : ' hover:bg-slate-500'} `}
                                             id={champion.name}
                                             src={champion.champ_sq} alt={champion.name}
                                             onClick={() => champSelected(championName)} />
                                     </div>
                                 ))
                             ) : (
-                                <h1 className="text-slate-400">Loading...</h1> // Show a loading message while waiting for data
+                                <h1 className="text-slate-400">Loading...</h1>
                             )}
                         </div>
                     </div>
@@ -385,19 +448,19 @@ export default function RedDraftPage() {
                     <div className="box3 flex flex-col h-full justify-around items-end basis-1/3 md:basis-3/12 ">
 
                         {champArray && champArray[7] && champdata && champdata[champArray[7]] && champdata[champArray[7]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[7]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 7) ? 'animate-pulse' : ''}`} alt={champdata[champArray[7]]['name']}
                                 src={champdata[champArray[7]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
                         )}
                         {champArray && champArray[8] && champdata && champdata[champArray[8]] && champdata[champArray[8]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[8]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 8) ? 'animate-pulse' : ''}`} alt={champdata[champArray[8]]['name']}
                                 src={champdata[champArray[8]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
                         )}
                         {champArray && champArray[11] && champdata && champdata[champArray[11]] && champdata[champArray[11]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[11]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 11) ? 'animate-pulse' : ''}`} alt={champdata[champArray[11]]['name']}
                                 src={champdata[champArray[11]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
@@ -406,13 +469,13 @@ export default function RedDraftPage() {
                         <div className="bans2 flex flex-row-reverse  w-fit">
 
                             {champArray && champArray[12] && champdata && champdata[champArray[12]] && champdata[champArray[12]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[12]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 12) ? 'animate-pulse' : ''}`} alt={champdata[champArray[12]]['name']}
                                     src={champdata[champArray[12]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
                             )}
                             {champArray && champArray[14] && champdata && champdata[champArray[14]] && champdata[champArray[14]]['champ_sq'] ? (
-                                <img className="p-1 w-20 h-20" alt={champdata[champArray[14]]['name']}
+                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 14) ? 'animate-pulse' : ''}`} alt={champdata[champArray[14]]['name']}
                                     src={champdata[champArray[14]]['champ_sq']} />
                             ) : (
                                 <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
@@ -421,13 +484,13 @@ export default function RedDraftPage() {
                         </div>
 
                         {champArray && champArray[16] && champdata && champdata[champArray[16]] && champdata[champArray[16]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[16]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 16) ? 'animate-pulse' : ''}`} alt={champdata[champArray[16]]['name']}
                                 src={champdata[champArray[16]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
                         )}
                         {champArray && champArray[19] && champdata && champdata[champArray[19]] && champdata[champArray[19]]['champ_sq'] ? (
-                            <img className="p-1 w-28 h-28" alt={champdata[champArray[19]]['name']}
+                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 19) ? 'animate-pulse' : ''}`} alt={champdata[champArray[19]]['name']}
                                 src={champdata[champArray[19]]['champ_sq']} />
                         ) : (
                             <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
@@ -440,9 +503,31 @@ export default function RedDraftPage() {
                  BOX 1 : BUTTON TO VALIDATE THE CURRENT ACTION
                 */}
 
-                <div className="draft-footer w-full flex items-center  justify-center ">
-                    <Button className="w-24 h-12 p-2 mt-10 mb-10 text-lg flex-shrink-0 bg-amber-500 hover:bg-amber-300 border-amber-500 hover:border-amber-300  border-4 text-slate-900 rounded"
-                        onClick={handleValidate}> {confirmButton} </Button>
+                <div className="p-2 w-full m-auto flex flex-row flex-nowrap items-center justify-between">
+                    <div onClick={volumeOnOff}>{(volume === 0) ? (
+                        <svg className="h-10 w-10 text-white "
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                            <line x1="23" y1="9" x2="17" y2="15" />  <line x1="17" y1="9" x2="23" y2="15" />
+                        </svg>
+                    ) : (
+                        <svg className="h-10 w-10 text-white"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+                        </svg>
+                    )}
+                    </div>
+                    <div className="">
+                        <Button className={`w-24 h-12 p-2 mt-10 mb-10 text-lg border-4 text-slate-900 rounded hover:bg-amber-300 hover:border-amber-300
+                            ${(ready === true && gamePhase === 'WAITING') ? 'bg-amber-300  border-amber-300 ' : 'bg-amber-500  border-amber-500 '}`}
+                            onClick={handleValidate}> {confirmButton} </Button>
+                    </div>
+                    <div className="w-10">
+
+                    </div>
                 </div>
             </div>
         </main>

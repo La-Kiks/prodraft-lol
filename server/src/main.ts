@@ -20,14 +20,8 @@ const HOST = process.env.HOST || '0.0.0.0'
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000'; // For the UI
 const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL
 const DATACHAMP = new LocalData()
-
-
-
 const DRAFT_TIMER: { [roomID: string]: number } = {}
 const DRAFT = new DraftGame()
-
-
-
 
 const ROOMS: { [ROOM_ID: string]: Room } = {}
 
@@ -160,7 +154,7 @@ async function buildServer() {
 
                     if (room.isReady()) {
                         app.io.to(ROOM_ID).emit(`start:${ROOM_ID}`)
-                        DRAFT.countdown(60, (value) => {
+                        DRAFT.countdown(30, (value) => {
                             DRAFT_TIMER[ROOM_ID] = value
                         })
                     }
@@ -189,7 +183,7 @@ async function buildServer() {
                         app.io.to(ROOM_ID).emit(`validate:${ROOM_ID}`, { phase: step.phase })
                     }
                     // Reset the timer on validate
-                    DRAFT.countdown(60, (value) => {
+                    DRAFT.countdown(30, (value) => {
                         DRAFT_TIMER[ROOM_ID] = value
                     })
                 } catch (e) {
@@ -209,7 +203,7 @@ async function buildServer() {
                         app.io.to(ROOM_ID).emit(`validate:${ROOM_ID}`, { phase: step.phase })
                     }
                     // Reset the timer on validate
-                    DRAFT.countdown(60, (value) => {
+                    DRAFT.countdown(30, (value) => {
                         DRAFT_TIMER[ROOM_ID] = value
                     })
                 } catch (e) {
@@ -236,7 +230,7 @@ async function buildServer() {
                     console.log('ready:red')
                     if (room.isReady()) {
                         app.io.to(ROOM_ID).emit(`start:${ROOM_ID}`)
-                        DRAFT.countdown(60, (value) => {
+                        DRAFT.countdown(30, (value) => {
                             DRAFT_TIMER[ROOM_ID] = value
                         })
                     }
