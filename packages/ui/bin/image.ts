@@ -1,17 +1,17 @@
 import sharp from "sharp";
 import path from "path";
-import { LocalData } from "../src/localbase";
-import { Champion } from "../src/type";
+import { LocalData } from "@prodraft/common/src/localbase";
+import { Champion } from "@prodraft/common/src/type";
 import fs from 'fs'
-import { versionIsUpToDate } from "../src/version";
+import { versionIsUpToDate } from "@prodraft/common/src/version";
 
 
-const PATH = path.join(process.cwd(), '/public/cards/')
+const PATH = path.join(__dirname, '../public/cards/')
 const DATA = new LocalData()
 
 
 // This function will only create cards if they do not exist yet and new patch 
-export async function createCards() {
+async function createCards() {
     const version = await versionIsUpToDate()
     if (version === false) {
         const champData: { [key: string]: Champion } = await DATA.getAllChampions()
@@ -61,16 +61,19 @@ async function imageToCard(name: string, url: string) {
                 fit: 'cover',
                 position: 'centre',
             })
+            .webp()
             .toBuffer()
 
-        const filePath = path.join(PATH, `${name}-card.jpg`)
+
+        const filePath = path.join(PATH, `${name}-card.webp`)
 
         fs.writeFileSync(filePath, card)
 
-        console.log(`Done : ${name}-card.jpg`)
+        console.log(`Done : ${name}-card.webp`)
 
     } catch (e) {
-        console.error(`Failed : ${name}-card.jpg`, e)
+        console.error(`Failed : ${name}-card.webp`, e)
     }
 }
 
+createCards()

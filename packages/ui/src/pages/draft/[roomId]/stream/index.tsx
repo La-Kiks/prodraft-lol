@@ -175,7 +175,7 @@ export default function StreamDraftPage() {
 
                 {/* HEADER  */}
                 <div>
-                    <img className="h-64 w-64 text-white" src="/next.svg" alt="" />
+                    <img className="h-64 w-64 text-white" src="/cards/Aatrox-card.webp" alt="" />
                 </div>
 
                 <div className="p-4 fixed top-0 left-0 waitopacity-50">

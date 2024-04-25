@@ -121,6 +121,9 @@ importers:
       react-hook-form:
         specifier: ^7.51.3
         version: 7.51.3(react@18.2.0)
+      sharp:
+        specifier: ^0.33.3
+        version: 0.33.3
       socket.io-client:
         specifier: ^4.7.5
         version: 4.7.5
@@ -161,6 +164,9 @@ importers:
       tailwindcss:
         specifier: ^3.4.3
         version: 3.4.3
+      tsx:
+        specifier: ^4.7.1
+        version: 4.7.2
       typescript:
         specifier: ^5.4.5
         version: 5.4.5
