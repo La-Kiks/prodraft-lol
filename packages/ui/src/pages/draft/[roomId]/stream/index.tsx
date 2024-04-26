@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import io, { Socket } from 'socket.io-client';
 import { Champion, DraftPayload } from "@prodraft/common/src/type";
 import { Progress } from "@/components/ui/progress";
+import champions from "@prodraft/common/src/champions.json"
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "ws://127.0.0.1:3001";
 const PLAYER = 'stream'
@@ -81,7 +82,7 @@ export default function StreamDraftPage() {
     useEffect(() => {
         socket?.on('connect', () => {
             console.log("Socket connected")
-            socket?.emit('draftpage', (data: { [key: string]: Champion }) => setChampdata(data))
+            setChampdata(champions)
             socket?.emit('new:room', ROOM_ID)
             socket?.emit('spectate:enter', ROOM_ID)
 

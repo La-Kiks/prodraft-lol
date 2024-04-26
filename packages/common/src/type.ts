@@ -8,7 +8,7 @@ export type Champion = {
     lol_id: string;
     name: string;
     alt_name: string;
-    tags: string;
+    tags: string | Promise<String>;
     champ_sq: string;
     champ_ct: string;
     pick_v: string;

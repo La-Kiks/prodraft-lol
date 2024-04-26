@@ -25,11 +25,10 @@ export class updateChampions {
     parseChampData(data: { data: { [x: string]: { name: any; key: any; tags: any } } }) {
         const newData: { [key: string]: Champion } = {}
         Object.keys(data.data).forEach(champion => {
-            const { name, key, tags } = data.data[champion]
+            const { name, key } = data.data[champion]
             const lol_id = key
             const champ_name = name
-            const tagsJoint = typeof tags === "string" ? tags : Object.values(tags).join(", ");
-            newData[champion] = { lol_id, name: champ_name, alt_name: "", tags: tagsJoint, champ_sq: "", champ_ct: "", pick_v: "", ban_v: "" };
+            newData[champion] = { lol_id, name: champ_name, alt_name: "", tags: "", champ_sq: "", champ_ct: "", pick_v: "", ban_v: "" };
         })
         return newData
     }
@@ -114,12 +113,23 @@ export class updateChampions {
         return data
     }
 
-    // Need to add alt_name list & maybe fix tags
-
-    // Not used but looks cool
-    addUrlToChampionSq(champion: Champion, url: string): Champion {
-        return { ...champion, champ_sq: url }
+    // Fixing tags to positions
+    async fixTagsPositions(pdata: { [key: string]: Champion }) {
+        try {
+            const response = await fetch(`http://cdn.merakianalytics.com/riot/lol/resources/latest/en-US/champions.json`)
+            const meikdata = await response.json()
+            for (const key in pdata) {
+                const positionArray: string[] = meikdata[key].positions
+                const positions = positionArray.join(', ')
+                pdata[key].tags = positions
+            }
+            return pdata
+        } catch (e) {
+            console.error(e)
+            throw new DownloadFailed("DL failed : positions")
+        }
     }
+
 
     // Create the data champions as Object
     async createChampionsData() {
@@ -127,8 +137,9 @@ export class updateChampions {
         const dlData = await champObject.dlChampions()
         const parsedData = champObject.parseChampData(dlData)
         const imgData = await champObject.addImages(parsedData)
-        champObject.addUnique(imgData)
-        return imgData
+        const posData = await champObject.fixTagsPositions(imgData)
+        champObject.addUnique(posData)
+        return posData
     }
 
     // Create a custom JSON file : champions.json

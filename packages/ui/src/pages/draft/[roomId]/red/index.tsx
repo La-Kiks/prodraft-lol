@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import io, { Socket } from 'socket.io-client';
 import { Champion, DraftPayload } from "@prodraft/common/src/type";
+import champions from "@prodraft/common/src/champions.json"
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "ws://127.0.0.1:3001";
 const PLAYER = 'red'
@@ -58,7 +59,7 @@ export default function RedDraftPage() {
     useEffect(() => {
         socket?.on('connect', () => {
             console.log("Socket connected")
-            socket?.emit('draftpage', (data: { [key: string]: Champion }) => setChampdata(data))
+            setChampdata(champions)
             socket?.emit('new:room', ROOM_ID)
 
             socket?.on(`state:${ROOM_ID}`, (state: DraftPayload) => {

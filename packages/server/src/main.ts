@@ -12,7 +12,6 @@ import { DefaultEventsMap } from "socket.io/dist/typed-events"
 import { Room } from "./model/room";
 
 
-
 dotenv.config();
 
 // SERVER VARIABLES
@@ -20,7 +19,6 @@ const PORT = parseInt(process.env.PORT || '3001', 10) // For the SERVER ; avoid 
 const HOST = process.env.HOST || '0.0.0.0'
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000'; // For the UI
 const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL
-const DATACHAMP = new LocalData()
 const DRAFT_TIMER: { [roomID: string]: number } = {}
 const DRAFT = new DraftGame()
 
@@ -49,10 +47,6 @@ function findRoomIdBySocketId(socketId: string): string | undefined {
     return undefined;
 }
 
-// Update my champions json if version changed
-DATACHAMP.createJson()
-
-
 //Fixing io decorator typescript error
 declare module "fastify" {
     export interface FastifyInstance {
@@ -76,7 +70,6 @@ if (!UPSTASH_REDIS_REST_URL) {
 async function buildServer() {
 
     const app = fastify();
-    const champData = await DATACHAMP.getAllChampions()
 
     await app.register(fastifyCors, {
         origin: CORS_ORIGIN,
@@ -94,11 +87,7 @@ async function buildServer() {
                 socket.emit('roomId', id)
             })
 
-            // Deliver the champData to the draft pages (blue red spec) to create the grid
-            socket.on('draftpage', (cb: (data: any) => void) => {
-                cb(champData) // call back that send champData
-                console.log('Champ data sent')
-            })
+            // Check the ROOM ID and give back state if it exits
             socket.on('new:room', (ROOM_ID: unknown) => {
                 const roomId = schRoomID.parse(ROOM_ID)
                 socket.join(roomId)
