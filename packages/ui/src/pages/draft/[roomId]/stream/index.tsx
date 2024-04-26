@@ -2,7 +2,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import io, { Socket } from 'socket.io-client';
 import { Champion, DraftPayload } from "@prodraft/common/src/type";
-
+import { Progress } from "@/components/ui/progress";
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "ws://127.0.0.1:3001";
 const PLAYER = 'stream'
@@ -29,7 +29,7 @@ function useSocket() {
     return socket;
 }
 
-function checkArrayBans(champArray: string[], champdata: { [key: string]: Champion }, index: number) {
+function checkArrayBans(champArray: string[], champdata: { [key: string]: Champion }, index: number): boolean {
     if (champArray && champArray[index] && champdata && champdata[champArray[index]] && champdata[champArray[index]]['champ_sq']) {
         return true
     } else {
@@ -37,7 +37,24 @@ function checkArrayBans(champArray: string[], champdata: { [key: string]: Champi
     }
 }
 
+function checkCardExits(champArray: string[], index: number): boolean {
+    if (champArray && champArray[index]) {
+        const currentChampion = champArray[index]
+        if (currentChampion === 'Helmet' || currentChampion === '') {
+            return false
+        } else {
+            return true
+        }
+    } else {
+        return false
+    }
+}
 
+function Tpur(timer: number): number {
+    const calcul = Math.round((timer * 100) / 30)
+    const invCalcul = 100 - calcul
+    return invCalcul
+}
 
 export default function StreamDraftPage() {
     // useState declarations :
@@ -45,10 +62,11 @@ export default function StreamDraftPage() {
     const [champArray, setChampArray] = useState<string[]>(new Array(20).fill(''))
     const [slotIndex, setSlotIndex] = useState(0)
     const [timer, setTimer] = useState(60)
-    const [gamePhase, setGamePhase] = useState<string>('WAITING')
+    const [gamePhase, setGamePhase] = useState<string>('')
     const [turn, setTurn] = useState<string>('')
     const [spectators, setSpectators] = useState(0)
     const [backgroundColor, setBackgroundColor] = useState<string>('bg-slate-800')
+    const [timePur, setTimePur] = useState<number>(0)
 
     // Other declarations
     const router = useRouter();
@@ -75,12 +93,14 @@ export default function StreamDraftPage() {
                     setTurn(pturn)
                     setSlotIndex(idx)
                     setChampArray(champs)
+
                 }
             })
 
             socket?.on(`timer:${ROOM_ID}`, (time: number) => {
                 setTimeout(() => {
                     setTimer(time)
+                    setTimePur(Tpur(time))
                 }, 500)
 
             })
@@ -129,9 +149,11 @@ export default function StreamDraftPage() {
 
     useEffect(() => {
         if (gamePhase == 'PLAYING') {
-            setTimer(60)
+            setTimer(30)
+            setTimePur(1)
         } else if (gamePhase == 'OVER') {
             setTimer(0)
+            setTimePur(100)
         }
     }, [gamePhase])
     // timer logc
@@ -146,10 +168,23 @@ export default function StreamDraftPage() {
         }
     }, [timer])
 
+    //Timer % progress bar 
+    useEffect(() => {
+        if (gamePhase == 'PLAYING') {
+            const countdown = setTimeout(() => {
+                if (timePur < 100) {
+                    setTimePur(prevTimer => Math.round((prevTimer + 0.20) * 100) / 100);
+                }
+            }, 50);
+            return () => clearTimeout(countdown)
+        }
+    }, [timePur])
+
     // Reset timer on new idx (new pick/ban)
     useEffect(() => {
         if (gamePhase == 'PLAYING') {
-            setTimer(60)
+            setTimer(30)
+            setTimePur(1)
         }
     }, [slotIndex])
 
@@ -171,20 +206,15 @@ export default function StreamDraftPage() {
     // Return the page view :
     return (
         <main className={` ${backgroundColor}`}>
-            <div className="flex flex-col p-0 min-h-screen w-full min-w-[1080px] space-y-0 m-auto items-center justify-center">
+            <div className="flex flex-col p-0 min-h-screen w-full min-w-[1080px] space-y-0 m-auto items-center justify-center ">
 
                 {/* HEADER  */}
-                <div>
-                    <img className="h-64 w-64 text-white" src="/cards/Aatrox-card.webp" alt="" />
-                </div>
-
                 <div className="p-4 fixed top-0 left-0 waitopacity-50">
                     <button className="bg-transparent hover:bg-green text-green font-semibold hover:text-slate-800 py-2 px-4 border border-green hover:border-transparent rounded"
                         onClick={() => changeBgColor()}>
                         Background Color
                     </button>
                 </div>
-
 
                 {/*  DRAFT CONTAINER  */}
 
@@ -213,12 +243,12 @@ export default function StreamDraftPage() {
                         {/*  Blue  */}
 
                         <div className="px-2 w-[500px] flex justify-end">
-                            <div className="flex ">
+                            <div className="flex bg-slate-800">
                                 {checkArrayBans(champArray, champdata, 0) ? (
                                     <img className={`w-14 h-14 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 0) ? 'animate-pulse' : ''}`} alt={champdata[champArray[0]]['name']}
                                         src={champdata[champArray[0]]['champ_sq']} />
                                 ) : (
-                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 0) ? 'border border-slate-300' : ''}`}
+                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 0) ? 'animate-pulse' : ''}`}
                                         width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
                                         strokeLinecap="round" strokeLinejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" />
@@ -229,7 +259,7 @@ export default function StreamDraftPage() {
                                     <img className={`w-14 h-14 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 2) ? 'animate-pulse' : ''}`} alt={champdata[champArray[2]]['name']}
                                         src={champdata[champArray[2]]['champ_sq']} />
                                 ) : (
-                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 2) ? 'border border-slate-300' : ''}`}
+                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 2) ? 'animate-pulse' : ''}`}
                                         width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
                                         strokeLinecap="round" strokeLinejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" />
@@ -240,7 +270,7 @@ export default function StreamDraftPage() {
                                     <img className={`w-14 h-14 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 4) ? 'animate-pulse' : ''}`} alt={champdata[champArray[4]]['name']}
                                         src={champdata[champArray[4]]['champ_sq']} />
                                 ) : (
-                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 4) ? 'border border-slate-300' : ''}`}
+                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 4) ? 'animate-pulse' : ''}`}
                                         width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
                                         strokeLinecap="round" strokeLinejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" />
@@ -248,12 +278,12 @@ export default function StreamDraftPage() {
                                     </svg>
                                 )}
                             </div>
-                            <div className="ml-12 flex">
+                            <div className="ml-12 flex bg-slate-800">
                                 {checkArrayBans(champArray, champdata, 13) ? (
                                     <img className={`w-14 h-14 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 13) ? 'animate-pulse' : ''}`} alt={champdata[champArray[13]]['name']}
                                         src={champdata[champArray[13]]['champ_sq']} />
                                 ) : (
-                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 13) ? 'border border-slate-300' : ''}`}
+                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 13) ? 'animate-pulse' : ''}`}
                                         width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
                                         strokeLinecap="round" strokeLinejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" />
@@ -264,7 +294,7 @@ export default function StreamDraftPage() {
                                     <img className={`w-14 h-14 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 15) ? 'animate-pulse' : ''}`} alt={champdata[champArray[15]]['name']}
                                         src={champdata[champArray[15]]['champ_sq']} />
                                 ) : (
-                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 15) ? 'border border-slate-300' : ''}`}
+                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 15) ? 'animate-pulse' : ''}`}
                                         width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
                                         strokeLinecap="round" strokeLinejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" />
@@ -277,12 +307,12 @@ export default function StreamDraftPage() {
                         {/*  Red  */}
 
                         <div className="px-2 flex w-[500px]">
-                            <div className="flex">
+                            <div className="flex bg-slate-400">
                                 {checkArrayBans(champArray, champdata, 1) ? (
                                     <img className={`w-14 h-14 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 1) ? 'animate-pulse' : ''}`} alt={champdata[champArray[1]]['name']}
                                         src={champdata[champArray[1]]['champ_sq']} />
                                 ) : (
-                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 1) ? 'border border-slate-300' : ''}`}
+                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 1) ? 'animate-pulse' : ''}`}
                                         width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
                                         strokeLinecap="round" strokeLinejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" />
@@ -293,7 +323,7 @@ export default function StreamDraftPage() {
                                     <img className={`w-14 h-14 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 3) ? 'animate-pulse' : ''}`} alt={champdata[champArray[3]]['name']}
                                         src={champdata[champArray[3]]['champ_sq']} />
                                 ) : (
-                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 3) ? 'border border-slate-300' : ''}`}
+                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 3) ? 'animate-pulse' : ''}`}
                                         width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
                                         strokeLinecap="round" strokeLinejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" />
@@ -304,7 +334,7 @@ export default function StreamDraftPage() {
                                     <img className={`w-14 h-14 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 5) ? 'animate-pulse' : ''}`} alt={champdata[champArray[5]]['name']}
                                         src={champdata[champArray[5]]['champ_sq']} />
                                 ) : (
-                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 5) ? 'border border-slate-300' : ''}`}
+                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 5) ? 'animate-pulse' : ''}`}
                                         width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
                                         strokeLinecap="round" strokeLinejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" />
@@ -312,12 +342,12 @@ export default function StreamDraftPage() {
                                     </svg>
                                 )}
                             </div>
-                            <div className="ml-12 flex">
+                            <div className="ml-12 flex bg-slate-400">
                                 {checkArrayBans(champArray, champdata, 12) ? (
                                     <img className={`w-14 h-14 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 12) ? 'animate-pulse' : ''}`} alt={champdata[champArray[12]]['name']}
                                         src={champdata[champArray[12]]['champ_sq']} />
                                 ) : (
-                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 12) ? 'border border-slate-300' : ''}`}
+                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 12) ? 'animate-pulse' : ''}`}
                                         width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
                                         strokeLinecap="round" strokeLinejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" />
@@ -328,7 +358,7 @@ export default function StreamDraftPage() {
                                     <img className={`w-14 h-14 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 14) ? 'animate-pulse' : ''}`} alt={champdata[champArray[14]]['name']}
                                         src={champdata[champArray[14]]['champ_sq']} />
                                 ) : (
-                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 14) ? 'border border-slate-300' : ''}`}
+                                    <svg className={`h-14 w-14 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 14) ? 'animate-pulse' : ''}`}
                                         width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
                                         strokeLinecap="round" strokeLinejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" />
@@ -346,52 +376,52 @@ export default function StreamDraftPage() {
 
                         {/*  Blue  */}
 
-                        <div className="px-2 flex justify-end  w-[500px]">
-                            {champArray && champArray[6] && champdata && champdata[champArray[6]] && champdata[champArray[6]]['champ_sq'] ? (
-                                <img className={`w-26 h-26 ${(gamePhase === 'PLAYING' && slotIndex === 6) ? 'animate-pulse' : ''}`} alt={champdata[champArray[6]]['name']}
-                                    src={champdata[champArray[6]]['champ_sq']} />
+                        <div className="ml-3 flex justify-end  w-fit bg-slate-800">
+                            {checkCardExits(champArray, 6) ? (
+                                <img className={`w-26 h-26  ${(gamePhase === 'PLAYING' && slotIndex === 6) ? 'animate-pulse' : ''}`} alt={champdata[champArray[6]]['name']}
+                                    src={`/cards/${champArray[6]}-card.webp`} />
                             ) : (
-                                <svg className="h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700"
+                                <svg className={`h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 6) ? 'animate-pulse' : ''}`}
                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
                                         d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             )}
-                            {champArray && champArray[9] && champdata && champdata[champArray[9]] && champdata[champArray[9]]['champ_sq'] ? (
+                            {checkCardExits(champArray, 9) ? (
                                 <img className={`w-26 h-26 ${(gamePhase === 'PLAYING' && slotIndex === 9) ? 'animate-pulse' : ''}`} alt={champdata[champArray[9]]['name']}
-                                    src={champdata[champArray[9]]['champ_sq']} />
+                                    src={`/cards/${champArray[9]}-card.webp`} />
                             ) : (
-                                <svg className="h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700"
+                                <svg className={`h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 9) ? 'animate-pulse' : ''}`}
                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
                                         d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             )}
-                            {champArray && champArray[10] && champdata && champdata[champArray[10]] && champdata[champArray[10]]['champ_sq'] ? (
+                            {checkCardExits(champArray, 10) ? (
                                 <img className={`w-26 h-26 ${(gamePhase === 'PLAYING' && slotIndex === 10) ? 'animate-pulse' : ''}`} alt={champdata[champArray[10]]['name']}
-                                    src={champdata[champArray[10]]['champ_sq']} />
+                                    src={`/cards/${champArray[10]}-card.webp`} />
                             ) : (
-                                <svg className="h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700"
+                                <svg className={`h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 10) ? 'animate-pulse' : ''}`}
                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
                                         d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             )}
-                            {champArray && champArray[17] && champdata && champdata[champArray[17]] && champdata[champArray[17]]['champ_sq'] ? (
+                            {checkCardExits(champArray, 17) ? (
                                 <img className={`w-26 h-26 ${(gamePhase === 'PLAYING' && slotIndex === 17) ? 'animate-pulse' : ''}`} alt={champdata[champArray[17]]['name']}
-                                    src={champdata[champArray[17]]['champ_sq']} />
+                                    src={`/cards/${champArray[17]}-card.webp`} />
                             ) : (
-                                <svg className="h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700"
+                                <svg className={`h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 17) ? 'animate-pulse' : ''}`}
                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
                                         d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             )}
-                            {champArray && champArray[18] && champdata && champdata[champArray[18]] && champdata[champArray[18]]['champ_sq'] ? (
+                            {checkCardExits(champArray, 18) ? (
                                 <img className={`w-26 h-26 ${(gamePhase === 'PLAYING' && slotIndex === 18) ? 'animate-pulse' : ''}`} alt={champdata[champArray[18]]['name']}
-                                    src={champdata[champArray[18]]['champ_sq']} />
+                                    src={`/cards/${champArray[18]}-card.webp`} />
                             ) : (
-                                <svg className="h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700"
+                                <svg className={`h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 18) ? 'animate-pulse' : ''}`}
                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
                                         d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -401,57 +431,57 @@ export default function StreamDraftPage() {
 
                         {/*  Red  */}
 
-                        <div className="px-2 flex  w-[500px]">
-                            {champArray && champArray[7] && champdata && champdata[champArray[7]] && champdata[champArray[7]]['champ_sq'] ? (
+                        <div className="mr-3 flex w-fit bg-slate-800">
+                            {checkCardExits(champArray, 7) ? (
                                 <img className={`w-26 h-26 ${(gamePhase === 'PLAYING' && slotIndex === 7) ? 'animate-pulse' : ''}`} alt={champdata[champArray[7]]['name']}
-                                    src={champdata[champArray[7]]['champ_sq']} />
+                                    src={`/cards/${champArray[7]}-card.webp`} />
                             ) : (
 
-                                <svg className="h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700"
+                                <svg className={`h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 7) ? 'animate-pulse' : ''}`}
                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
                                         d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             )}
-                            {champArray && champArray[8] && champdata && champdata[champArray[8]] && champdata[champArray[8]]['champ_sq'] ? (
+                            {checkCardExits(champArray, 8) ? (
                                 <img className={`w-26 h-26 ${(gamePhase === 'PLAYING' && slotIndex === 8) ? 'animate-pulse' : ''}`} alt={champdata[champArray[8]]['name']}
-                                    src={champdata[champArray[8]]['champ_sq']} />
+                                    src={`/cards/${champArray[8]}-card.webp`} />
                             ) : (
 
-                                <svg className="h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700"
+                                <svg className={`h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 8) ? 'animate-pulse' : ''}`}
                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
                                         d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             )}
-                            {champArray && champArray[11] && champdata && champdata[champArray[11]] && champdata[champArray[11]]['champ_sq'] ? (
+                            {checkCardExits(champArray, 11) ? (
                                 <img className={`w-26 h-26 ${(gamePhase === 'PLAYING' && slotIndex === 11) ? 'animate-pulse' : ''}`} alt={champdata[champArray[11]]['name']}
-                                    src={champdata[champArray[11]]['champ_sq']} />
+                                    src={`/cards/${champArray[11]}-card.webp`} />
                             ) : (
 
-                                <svg className="h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700"
+                                <svg className={`h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 11) ? 'animate-pulse' : ''}`}
                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
                                         d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             )}
-                            {champArray && champArray[16] && champdata && champdata[champArray[16]] && champdata[champArray[16]]['champ_sq'] ? (
+                            {checkCardExits(champArray, 16) ? (
                                 <img className={`w-26 h-26 ${(gamePhase === 'PLAYING' && slotIndex === 16) ? 'animate-pulse' : ''}`} alt={champdata[champArray[16]]['name']}
-                                    src={champdata[champArray[16]]['champ_sq']} />
+                                    src={`/cards/${champArray[16]}-card.webp`} />
                             ) : (
 
-                                <svg className="h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700"
+                                <svg className={`h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 16) ? 'animate-pulse' : ''}`}
                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
                                         d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             )}
-                            {champArray && champArray[19] && champdata && champdata[champArray[19]] && champdata[champArray[19]]['champ_sq'] ? (
+                            {checkCardExits(champArray, 19) ? (
                                 <img className={`w-26 h-26 ${(gamePhase === 'PLAYING' && slotIndex === 19) ? 'animate-pulse' : ''}`} alt={champdata[champArray[19]]['name']}
-                                    src={champdata[champArray[19]]['champ_sq']} />
+                                    src={`/cards/${champArray[19]}-card.webp`} />
                             ) : (
 
-                                <svg className="h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700"
+                                <svg className={`h-48 w-24 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 19) ? 'animate-pulse' : ''}`}
                                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
                                         d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -466,6 +496,14 @@ export default function StreamDraftPage() {
 
 
                     {/* FOOTER */}
+
+                    <div className=" flex w-full">
+
+                        {/* TIMER */}
+
+                        <Progress className="mx-3 h-1.5" value={timePur} indicatorColor="bg-gray-600" />
+
+                    </div>
 
 
                 </div>

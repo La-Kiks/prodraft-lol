@@ -4,8 +4,8 @@ import { Side } from "./side";
 // id phase pturn idx champs 
 class Draft {
 
-    private phase: string = 'WAITING'
-    private pturn: string = 'nobody'
+    public phase: string = 'WAITING'
+    public pturn: string = ''
     private idx: number = 0
     private champs: Array<string> = new Array(20).fill('')
 
@@ -50,6 +50,11 @@ export class Room {
     }
     setRedSideReady(ready: boolean) {
         this.redside.setReady(ready)
+    }
+
+    isPlaying() {
+        return (this.draft.phase = 'PLAYING') && (this.draft.pturn = 'blue')
+        // Initiate the 1st turn to avoid behind stuck with initial values
     }
 
     step(idx: number, currentChamp: string) {

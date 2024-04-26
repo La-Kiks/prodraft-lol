@@ -2,31 +2,11 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import io, { Socket } from 'socket.io-client';
-
+import { Champion, DraftPayload } from "@prodraft/common/src/type";
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "ws://127.0.0.1:3001";
 const PLAYER = 'blue'
 
-
-interface Champion {
-    lol_id: string;
-    name: string;
-    alt_name: string;
-    tags: string;
-    champ_sq: string;
-    champ_ct: string;
-    pick_v: string;
-    ban_v: string;
-}
-
-type DraftPayload = {
-    draft: {
-        phase: string,
-        pturn: string,
-        idx: number,
-        champs: string[]
-    }
-}
 
 function useSocket() {
     const [socket, setSocket] = useState<Socket | null>(null);
@@ -272,12 +252,12 @@ export default function BlueDraftPage() {
 
     // Return view : 
     return (
-        <main className="flex flex-col p-0 w-full min-h-screen min-w-[540px] space-y-0 m-auto  items-center place-content-start bg-slate-800">
+        <main className="flex flex-col p-0 w-full min-h-screen min-w-[540px] space-y-0 m-auto  items-center place-content-start bg-slate-800 bg-gradient-to-r from-blue-900 to-red-900">
             <div className="p-2 mt-8 mb-8 flex content-start justify-center text-4xl text-white hover:text-slate-300">
                 <h1 onClick={() => bannerClick()}>Prodraft.lol</h1>
             </div>
 
-            <div className="max-w-5xl w-full flex flex-col items-center border rounded border-slate-400 bg-slate-700">
+            <div className="max-w-5xl w-full flex flex-col items-center border rounded border-slate-500 bg-slate-700  bg-gradient-to-r from-blue-900 to-red-900">
 
                 {/* DRAFT HEADER 
                 BOX 1 : Blue team name  + blue teams bans (x3)

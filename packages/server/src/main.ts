@@ -157,6 +157,7 @@ async function buildServer() {
                     console.log('ready:blue')
 
                     if (room.isReady()) {
+                        room.isPlaying()
                         app.io.to(ROOM_ID).emit(`start:${ROOM_ID}`)
                         DRAFT.countdown(30, (value) => {
                             DRAFT_TIMER[ROOM_ID] = value
@@ -233,6 +234,7 @@ async function buildServer() {
                     room.setRedSideReady(ready)
                     console.log('ready:red')
                     if (room.isReady()) {
+                        room.isPlaying()
                         app.io.to(ROOM_ID).emit(`start:${ROOM_ID}`)
                         DRAFT.countdown(30, (value) => {
                             DRAFT_TIMER[ROOM_ID] = value
