@@ -5,7 +5,6 @@ import fastifyIO from "fastify-socket.io";
 import { Server } from "socket.io" // to fix io decorator ts error
 import closeWithGrace from 'close-with-grace'
 // import { RedisDatabase } from "./actions/database"
-import { LocalData } from "@prodraft/common/src/localbase"
 import { DraftGame } from "./actions/playing"
 import { schClick, schReadyCheck, schRoomID, schValidate } from "./actions/schema"
 import { DefaultEventsMap } from "socket.io/dist/typed-events"
@@ -21,7 +20,6 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000'; // For t
 const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL
 const DRAFT_TIMER: { [roomID: string]: number } = {}
 const DRAFT = new DraftGame()
-
 const ROOMS: { [ROOM_ID: string]: Room } = {}
 
 function getOrCreateRoom(roomId: string): Room {
@@ -35,12 +33,24 @@ function getRoom(roomId: string): Room | undefined {
     return ROOMS[roomId]
 }
 
-function findRoomIdBySocketId(socketId: string): string | undefined {
+function deleteRoom(roomId: string) {
+    if (ROOMS.hasOwnProperty(roomId)) {
+        delete ROOMS[roomId]
+    }
+}
+
+function findRoomIdBySocketId(socketId: string): string[] | undefined {
     for (const roomId in ROOMS) {
         if (ROOMS.hasOwnProperty(roomId)) {
             const room = ROOMS[roomId];
             if (room.spectatorsList.includes(socketId)) {
-                return roomId;
+                return (['spec', roomId]);
+            }
+            if (room.bluesList.includes(socketId)) {
+                return (['blue', roomId]);
+            }
+            if (room.redsList.includes(socketId)) {
+                return (['red', roomId]);
             }
         }
     }
@@ -102,6 +112,14 @@ async function buildServer() {
                     if (specount) {
                         app.io.to(roomId).emit(`specators:count:${roomId}`, specount)
                     }
+                    const bluecount = room.blueCount()
+                    if (bluecount) {
+                        app.io.to(roomId).emit(`blues:count:${roomId}`, bluecount)
+                    }
+                    const redcount = room.redCount()
+                    if (redcount) {
+                        app.io.to(roomId).emit(`reds:count:${roomId}`, redcount)
+                    }
                     // TIMER for ROOM
                     if (DRAFT_TIMER[roomId]) {
                         console.log("Timer exists for this room")
@@ -120,15 +138,60 @@ async function buildServer() {
                 }
 
             })
+            socket.on('blue:enter', (ROOM_ID: unknown) => {
+                const roomId = schRoomID.parse(ROOM_ID)
+                const room = getOrCreateRoom(roomId)
+                room.blueCountIncrease(socket.id)
+                const bluecount = room.blueCount()
+                if (bluecount) {
+                    app.io.to(roomId).emit(`blues:count:${roomId}`, bluecount)
+                }
+
+            })
+            socket.on('red:enter', (ROOM_ID: unknown) => {
+                const roomId = schRoomID.parse(ROOM_ID)
+                const room = getOrCreateRoom(roomId)
+                room.redCountIncrease(socket.id)
+                const redcount = room.redCount()
+                if (redcount) {
+                    app.io.to(roomId).emit(`reds:count:${roomId}`, redcount)
+                }
+
+            })
 
             socket.on('disconnect', () => {
-                const roomId = findRoomIdBySocketId(socket.id)
-                if (roomId) {
-                    const room = getOrCreateRoom(roomId)
-                    room.specCountDecrease(socket.id)
-                    const specount = room.specCount()
-                    app.io.to(roomId).emit(`specators:count:${roomId}`, specount)
+                const tempArray = findRoomIdBySocketId(socket.id)
+                if (tempArray) {
+                    const player = tempArray[0]
+                    const roomId = tempArray[1]
+                    if (roomId) {
+                        const room = getOrCreateRoom(roomId)
+                        if (player === 'spec') {
+                            room.specCountDecrease(socket.id)
+                            const specount = room.specCount()
+                            app.io.to(roomId).emit(`specators:count:${roomId}`, specount)
+                        }
+                        if (player === 'blue') {
+                            room.blueCountDecrease(socket.id)
+                            const blueount = room.blueCount()
+                            app.io.to(roomId).emit(`blues:count:${roomId}`, blueount)
+                        }
+                        if (player === 'red') {
+                            room.redCountDecrease(socket.id)
+                            const redount = room.redCount()
+                            app.io.to(roomId).emit(`reds:count:${roomId}`, redount)
+                        }
+                        const activePlayers = room.allPlayersCount()
+                        if (activePlayers === 0) {
+                            console.log(roomId, ' will be deleted after 15min')
+                            setTimeout(() => {
+                                deleteRoom(roomId)
+                            }, 900000) // 15 min
+                        }
+                    }
+
                 }
+
             })
 
 

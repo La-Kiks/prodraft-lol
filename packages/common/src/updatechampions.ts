@@ -6,7 +6,7 @@ import { Champion } from "./type"
 import { RecordNotFoundError } from "./errors/recordNotFoundError"
 
 
-export class updateChampions {
+export class UpdateChampions {
 
     async dlChampions() {
         try {
@@ -133,7 +133,7 @@ export class updateChampions {
 
     // Create the data champions as Object
     async createChampionsData() {
-        const champObject = new updateChampions()
+        const champObject = new UpdateChampions()
         const dlData = await champObject.dlChampions()
         const parsedData = champObject.parseChampData(dlData)
         const imgData = await champObject.addImages(parsedData)

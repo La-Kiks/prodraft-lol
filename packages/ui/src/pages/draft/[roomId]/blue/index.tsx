@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import io, { Socket } from 'socket.io-client';
 import { Champion, DraftPayload } from "@prodraft/common/src/type";
 import champions from "@prodraft/common/src/champions.json"
@@ -31,6 +31,47 @@ function useSocket() {
     return socket;
 }
 
+interface CopyArrayButtonProps {
+    myarray: string[]
+}
+
+const CopyArrayButton: React.FC<CopyArrayButtonProps> = ({ myarray }) => {
+    const [copied, setCopied] = useState(false);
+
+    const copyArrayToClipboard = () => {
+        const arrayAsString = myarray.join(', '); // Convert array to string with commas
+        navigator.clipboard.writeText(arrayAsString)
+            .then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000); // Reset copied state after 2 seconds
+            })
+            .catch((error) => {
+                console.error('Error copying to clipboard:', error);
+                // Handle error if copying to clipboard fails
+            });
+    };
+
+    return (
+        <div>
+            <button className="flex flex-col w-full items-center">
+                <div className="group flex relative ">
+                    <svg onClick={copyArrayToClipboard}
+                        className="h-8 w-8 text-slate-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                    <span
+                        className="p-1 group-hover:opacity-100 transition-opacity bg-slate-900 text-md text-white rounded-md absolute translate-x-5 -translate-y-5 opacity-0 m-5"
+                    >Draft_recap_for_analysts</span>
+                </div>
+
+                {copied && <span className="text-slate-200 p-1">Draft copied to clipboard!</span>}
+                {copied && <span className="text-slate-200 p-1">Blue bans, Red bans, Blue picks, Red picks</span>}
+            </button>
+
+        </div>
+    );
+}
+
 
 export default function BlueDraftPage() {
     // useState declarations
@@ -46,6 +87,15 @@ export default function BlueDraftPage() {
     const [champDisabled, setChampDisabled] = useState<{ [name: string]: boolean }>({})
     const [volume, setVolume] = useState<number>(1)
     const [spectators, setSpectators] = useState(0)
+    const [blues, setBlues] = useState(0)
+    const [reds, setReds] = useState(0)
+    const [csvDraft, setCsvDraft] = useState<string[]>(new Array(20).fill(''))
+    const [searchQuery, setSearchQuery] = useState('')
+    const [filterByTopTag, setFilterByTopTag] = useState(false);
+    const [filterByJunTag, setFilterByJunTag] = useState(false);
+    const [filterByMidTag, setFilterByMidTag] = useState(false);
+    const [filterByAdcTag, setFilterByAdcTag] = useState(false);
+    const [filterBySupTag, setFilterBySupTag] = useState(false);
 
     // Other declarations
     const router = useRouter();
@@ -60,6 +110,7 @@ export default function BlueDraftPage() {
             console.log("Socket connected")
             setChampdata(champions)
             socket?.emit('new:room', ROOM_ID)
+            socket?.emit('blue:enter', ROOM_ID)
 
             socket?.on(`state:${ROOM_ID}`, (state: DraftPayload) => {
                 if (state) {
@@ -78,11 +129,19 @@ export default function BlueDraftPage() {
             })
 
         })
-
     }, [ROOM_ID]);
 
+    // Counts players
     socket?.on(`specators:count:${ROOM_ID}`, (specount: number) => {
         setSpectators(specount)
+    })
+
+    socket?.on(`blues:count:${ROOM_ID}`, (bluecount: number) => {
+        setBlues(bluecount)
+    })
+
+    socket?.on(`reds:count:${ROOM_ID}`, (redcount: number) => {
+        setReds(redcount)
     })
 
     // Receiving this even from server when both sides READY
@@ -201,8 +260,15 @@ export default function BlueDraftPage() {
             setTimer(30)
         } else if (gamePhase == 'OVER') {
             setConfirmButton('New draft')
+            setCsvDraft([
+                champArray[0], champArray[2], champArray[4], champArray[13], champArray[15],
+                champArray[1], champArray[3], champArray[5], champArray[12], champArray[14],
+                champArray[6], champArray[9], champArray[10], champArray[17], champArray[18],
+                champArray[7], champArray[8], champArray[11], champArray[16], champArray[19]
+            ]) // for the analysts
         }
     }, [gamePhase])
+
 
     // different validate button usage
     const handleValidate = () => {
@@ -251,6 +317,82 @@ export default function BlueDraftPage() {
         }
     }
 
+    // Search bar
+    const handleSearch = (event: any) => {
+        setSearchQuery(event.target.value)
+    }
+
+    const filteredChampions = Object.entries(champdata).filter(([championName, champion]) => {
+        if (filterByTopTag && champion.tags && champion.tags.includes('TOP') && champion.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+            return true
+        } if (filterByJunTag && champion.tags && champion.tags.includes('JUNGLE') && champion.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+            return true
+        } if (filterByMidTag && champion.tags && champion.tags.includes('MIDDLE') && champion.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+            return true
+        } if (filterByAdcTag && champion.tags && champion.tags.includes('BOTTOM') && champion.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+            return true
+        } if (filterBySupTag && champion.tags && champion.tags.includes('SUPPORT') && champion.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+            return true
+        }
+        if (!filterByTopTag && !filterByJunTag && !filterByMidTag && !filterByAdcTag && !filterBySupTag) {
+            if (searchQuery.trim() === '') {
+                return true;
+            } if (champion.name.toString().includes(searchQuery)) {
+                return true;
+            } if (championName.toLowerCase().includes(searchQuery.toLowerCase())) {
+                return true;
+            }
+        }
+        return false;
+    });
+
+    // filter buttons
+    const handleFilterByTopTag = () => {
+        setFilterByTopTag(!filterByTopTag);
+        setFilterByJunTag(false)
+        setFilterByMidTag(false);
+        setFilterByAdcTag(false)
+        setFilterBySupTag(false)
+        setSearchQuery('')
+    };
+
+    const handleFilterByJunTag = () => {
+        setFilterByTopTag(false);
+        setFilterByJunTag(!filterByJunTag)
+        setFilterByMidTag(false);
+        setFilterByAdcTag(false)
+        setFilterBySupTag(false)
+        setSearchQuery('')
+    };
+
+    const handleFilterByMidTag = () => {
+        setFilterByTopTag(false);
+        setFilterByJunTag(false)
+        setFilterByMidTag(!filterByMidTag);
+        setFilterByAdcTag(false)
+        setFilterBySupTag(false)
+        setSearchQuery('')
+    };
+
+    const handleFilterByAdcTag = () => {
+        setFilterByTopTag(false);
+        setFilterByJunTag(false)
+        setFilterByMidTag(false);
+        setFilterByAdcTag(!filterByAdcTag)
+        setFilterBySupTag(false)
+        setSearchQuery('')
+    };
+
+    const handleFilterBySupTag = () => {
+        setFilterByTopTag(false);
+        setFilterByJunTag(false)
+        setFilterByMidTag(false);
+        setFilterByAdcTag(false)
+        setFilterBySupTag(!filterBySupTag)
+        setSearchQuery('')
+    };
+
+
     // Return view : 
     return (
         <main className="flex flex-col p-0 w-full min-h-screen min-w-[540px] space-y-0 m-auto  items-center place-content-start bg-slate-800 bg-gradient-to-r from-blue-900 to-red-900">
@@ -261,10 +403,28 @@ export default function BlueDraftPage() {
             <div className="max-w-5xl w-full flex flex-col items-center border rounded border-slate-500 bg-slate-700  bg-gradient-to-r from-blue-900 to-red-900">
 
                 {/* DRAFT HEADER 
+                BOX 0 : Nb blue/red players
                 BOX 1 : Blue team name  + blue teams bans (x3)
                 BOX 2 : Timer
                 BOX 3 : Red team name + red team bans (x3)
                 */}
+
+                <div className=" px-1 flex w-full m-auto justify-between">
+                    <div className="flex text-slate-200 items-center">
+                        <svg className="h-5 w-5 text-white"
+                            width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" />  <circle cx="12" cy="7" r="4" />  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                        </svg>
+                        <h1 className="ml-4 mb-1  text-white ">{blues}</h1>
+                    </div>
+                    <div className="flex text-slate-200 items-center">
+                        <h1 className="mr-4 mb-1  text-white">{reds}</h1>
+                        <svg className="h-5 w-5 text-white"
+                            width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" />  <circle cx="12" cy="7" r="4" />  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                        </svg>
+                    </div>
+                </div>
 
                 <div className="draft-header flex  w-full items-center  ">
                     <div className="box1 basis-5/12  flex flex-col ">
@@ -387,45 +547,62 @@ export default function BlueDraftPage() {
                     <div className="box2   h-[640px] w-full flex flex-col items-center basis-1/3 md:basis-6/12 ">
                         <div className="header flex flex-wrap justify-around w-full ">
                             <div className="flex">
-                                <img className="p-1 max-w-11 max-h-11"
-                                    src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/svg/position-top.svg"
-                                    alt="Toplaners" />
-                                <img className="p-1 max-w-11 max-h-11"
-                                    src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/svg/position-jungle.svg"
-                                    alt="Junglers" />
-                                <img className="p-1 max-w-11 max-h-11"
-                                    src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/svg/position-middle.svg"
-                                    alt="Midlaners" />
-                                <img className="p-1 max-w-11 max-h-11"
-                                    src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/svg/position-lane.svg"
-                                    alt="Botlaners" />
-                                <img className="p-1 max-w-11 max-h-11"
-                                    src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/svg/position-utility.svg"
-                                    alt="Support" />
+                                <button onClick={handleFilterByTopTag}>
+                                    <img className={`mx-0.5 max-w-11 max-h-11 ${(filterByTopTag) ? 'border' : ''}`}
+                                        src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/svg/position-top.svg"
+                                        alt="Toplaners"
+                                    />
+                                </button>
+                                <button onClick={handleFilterByJunTag}>
+                                    <img className={`mx-0.5 max-w-11 max-h-11 ${(filterByJunTag) ? 'border' : ''}`}
+                                        src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/svg/position-jungle.svg"
+                                        alt="Junglers"
+                                    />
+                                </button>
+                                <button onClick={handleFilterByMidTag}>
+                                    <img className={` mx-0.5 max-w-11 max-h-11 ${(filterByMidTag) ? 'border' : ''}`}
+                                        src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/svg/position-middle.svg"
+                                        alt="Midlaners"
+                                    />
+                                </button>
+                                <button onClick={handleFilterByAdcTag}>
+                                    <img className={`mx-0.5 max-w-11 max-h-11 ${(filterByAdcTag) ? 'border' : ''}`}
+                                        src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/svg/position-lane.svg"
+                                        alt="Botlaners"
+                                    />
+                                </button>
+                                <button onClick={handleFilterBySupTag}>
+                                    <img className={`mx-0.5 max-w-11 max-h-11 ${(filterBySupTag) ? 'border' : ''}`}
+                                        src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/svg/position-utility.svg"
+                                        alt="Support"
+                                    />
+                                </button>
                             </div>
                             <div className="p-1">
                                 <input
-                                    type="search"
+                                    type="text"
                                     className=" m-0 block w-full rounded border border-solid border-neutral-200 bg-transparent bg-clip-padding px-3 py-[0.25rem] text-base font-normal leading-[1.6] text-surface outline-none transition duration-200 ease-in-out placeholder:text-neutral-500 focus:z-[3] focus:border-primary focus:shadow-inset focus:outline-none motion-reduce:transition-none dark:border-white/10 text-white dark:placeholder:text-neutral-200 dark:autofill:shadow-autofill dark:focus:border-primary"
                                     placeholder="Search"
-                                    aria-label="Search"
-                                    id="exampleFormControlInput4" />
+                                    value={searchQuery}
+                                    onChange={handleSearch} />
                             </div>
                         </div>
                         <div className="grid gap-0  overflow-y-scroll grid-cols-1 sm:grid-cols-2 md:grid-cols-5 lg:grid-cols-6  ">
 
-                            {Object.entries(champdata).length > 0 ? (
-                                Object.entries(champdata).map(([championName, champion]) => (
-                                    <div key={championName}>
-                                        <img className={`w-20 h-20 p-0.5 rounded-md ${champDisabled[championName] ? 'filter grayscale cursor-not-allowed ' : ' hover:bg-slate-500'}`}
-                                            id={champion.name}
-                                            src={champion.champ_sq} alt={champion.name}
-                                            onClick={() => champSelected(championName)} />
-                                    </div>
+                            {filteredChampions.length > 0 ? (
+                                filteredChampions.map(([championName, champion]) => (
+
+                                    <img className={`w-20 h-20 p-0.5 rounded-md ${champDisabled[championName] ? 'filter grayscale cursor-not-allowed ' : ' hover:bg-slate-500'}`}
+                                        key={champion.name}
+                                        id={champion.name}
+                                        src={champion.champ_sq} alt={champion.name}
+                                        onClick={() => champSelected(championName)} />
+
                                 ))
                             ) : (
-                                <h1 className="text-slate-400">Loading...</h1>
+                                <h1 className="text-slate-400 m-auto">No champs...</h1>
                             )}
+
                         </div>
                     </div>
 
@@ -519,7 +696,13 @@ export default function BlueDraftPage() {
 
                     </div>
                 </div>
+
             </div>
+            {gamePhase === 'OVER' ? (
+                <div className="p-6 m-6">
+                    <CopyArrayButton myarray={csvDraft} />
+                </div>
+            ) : ('')}
         </main>
     )
 }

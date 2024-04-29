@@ -29,6 +29,47 @@ function useSocket() {
     return socket;
 }
 
+interface CopyArrayButtonProps {
+    myarray: string[]
+}
+
+const CopyArrayButton: React.FC<CopyArrayButtonProps> = ({ myarray }) => {
+    const [copied, setCopied] = useState(false);
+
+    const copyArrayToClipboard = () => {
+        const arrayAsString = myarray.join(', '); // Convert array to string with commas
+        navigator.clipboard.writeText(arrayAsString)
+            .then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000); // Reset copied state after 2 seconds
+            })
+            .catch((error) => {
+                console.error('Error copying to clipboard:', error);
+                // Handle error if copying to clipboard fails
+            });
+    };
+
+    return (
+        <div>
+            <button className="flex flex-col w-full items-center">
+                <div className="group flex relative ">
+                    <svg onClick={copyArrayToClipboard}
+                        className="h-8 w-8 text-slate-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                    <span
+                        className="p-1 group-hover:opacity-100 transition-opacity bg-slate-900 text-md text-white rounded-md absolute translate-x-5 -translate-y-5 opacity-0 m-5"
+                    >Draft_recap_for_analysts</span>
+                </div>
+
+                {copied && <span className="text-slate-200 p-1">Draft copied to clipboard!</span>}
+                {copied && <span className="text-slate-200 p-1">Blue bans, Red bans, Blue picks, Red picks</span>}
+            </button>
+
+        </div>
+    );
+}
+
 
 export default function SpecDraftPage() {
     // useState declarations :
@@ -39,6 +80,10 @@ export default function SpecDraftPage() {
     const [gamePhase, setGamePhase] = useState<string>('WAITING')
     const [turn, setTurn] = useState('')
     const [spectators, setSpectators] = useState(0)
+    const [blues, setBlues] = useState(0)
+    const [reds, setReds] = useState(0)
+
+    const [csvDraft, setCsvDraft] = useState<string[]>(new Array(20).fill(''))
 
     // Other declarations
     const router = useRouter();
@@ -80,8 +125,17 @@ export default function SpecDraftPage() {
 
     }, [ROOM_ID]);
 
+    // Counts players
     socket?.on(`specators:count:${ROOM_ID}`, (specount: number) => {
         setSpectators(specount)
+    })
+
+    socket?.on(`blues:count:${ROOM_ID}`, (bluecount: number) => {
+        setBlues(bluecount)
+    })
+
+    socket?.on(`reds:count:${ROOM_ID}`, (redcount: number) => {
+        setReds(redcount)
     })
 
     socket?.on(`start:${ROOM_ID}`, () => {
@@ -124,6 +178,12 @@ export default function SpecDraftPage() {
             setTimer(60)
         } else if (gamePhase == 'OVER') {
             setTimer(0)
+            setCsvDraft([
+                champArray[0], champArray[2], champArray[4], champArray[13], champArray[15],
+                champArray[1], champArray[3], champArray[5], champArray[12], champArray[14],
+                champArray[6], champArray[9], champArray[10], champArray[17], champArray[18],
+                champArray[7], champArray[8], champArray[11], champArray[16], champArray[19]
+            ])
         }
     }, [gamePhase])
     // timer logc
@@ -164,6 +224,23 @@ export default function SpecDraftPage() {
                 BOX 2 : Timer
                 BOX 3 : Red team name + red team bans (x3)
                 */}
+
+                <div className=" px-1 flex w-full m-auto justify-between">
+                    <div className="flex text-slate-200 items-center">
+                        <svg className="h-5 w-5 text-white"
+                            width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" />  <circle cx="12" cy="7" r="4" />  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                        </svg>
+                        <h1 className="ml-4 mb-1  text-white ">{blues}</h1>
+                    </div>
+                    <div className="flex text-slate-200 items-center">
+                        <h1 className="mr-4 mb-1  text-white">{reds}</h1>
+                        <svg className="h-5 w-5 text-white"
+                            width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" />  <circle cx="12" cy="7" r="4" />  <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                        </svg>
+                    </div>
+                </div>
 
                 <div className="draft-header flex  w-full items-center  ">
                     <div className="box1 basis-5/12  flex flex-col ">
@@ -355,6 +432,11 @@ export default function SpecDraftPage() {
                     <h1 className=" w-auto h-12 p-2 mt-10 mb-10 text-lg flex-shrink-0 text-white"> Spectators : {spectators}</h1>
                 </div>
             </div>
+            {gamePhase === 'OVER' ? (
+                <div className="p-6 m-6">
+                    <CopyArrayButton myarray={csvDraft} />
+                </div>
+            ) : ('')}
         </main>
     )
 }

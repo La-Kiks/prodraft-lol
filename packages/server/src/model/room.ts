@@ -32,6 +32,11 @@ export class Room {
     private draft: Draft;
     private spectatorsCount: number;
     public spectatorsList: Array<string>;
+    private bluesCount: number;
+    public bluesList: Array<string>;
+    private redsCount: number;
+    public redsList: Array<string>;
+
 
     constructor(private id: string) {
         this.blueside = new Side()
@@ -39,6 +44,10 @@ export class Room {
         this.draft = new Draft()
         this.spectatorsCount = 0
         this.spectatorsList = []
+        this.bluesCount = 0
+        this.bluesList = []
+        this.redsCount = 0
+        this.redsList = []
     }
 
     isReady() {
@@ -78,5 +87,40 @@ export class Room {
         const updateSpecList = this.spectatorsList.filter(spectator => spectator !== socketId)
         this.spectatorsList = updateSpecList
         return this.spectatorsCount--
+    }
+
+    blueCount() {
+        return this.bluesCount
+    }
+
+    blueCountIncrease(socketId: string) {
+        this.bluesList.push(socketId)
+        return this.bluesCount++
+    }
+
+    blueCountDecrease(socketId: string) {
+        const updateBlueList = this.bluesList.filter(blue => blue !== socketId)
+        this.bluesList = updateBlueList
+        return this.bluesCount--
+    }
+
+    redCount() {
+        return this.redsCount
+    }
+
+    redCountIncrease(socketId: string) {
+        this.redsList.push(socketId)
+        return this.redsCount++
+    }
+
+    redCountDecrease(socketId: string) {
+        const updateRedList = this.redsList.filter(red => red !== socketId)
+        this.redsList = updateRedList
+        return this.redsCount--
+    }
+
+    allPlayersCount() {
+        const total = this.bluesCount + this.redsCount + this.spectatorsCount
+        return total
     }
 }
