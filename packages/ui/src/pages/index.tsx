@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { FormEvent, useEffect, useState } from "react";
 import io, { Socket } from 'socket.io-client';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "ws://127.0.0.1:3001";
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "ws://127.0.0.1:8000";
 let ROOM_ID = ''
 
 

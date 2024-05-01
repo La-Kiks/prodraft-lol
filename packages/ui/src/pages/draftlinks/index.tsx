@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { FormEvent, useRef, useState } from "react";
 
 
-const PAGE_URL = process.env.NEXT_PUBLIC_PAGE_URL || "http://localhost:3000";
+const PAGE_URL = process.env.NEXT_PUBLIC_PAGE_URL || "http://localhost:8000";
 
 
 export default function DraftLinksPage() {

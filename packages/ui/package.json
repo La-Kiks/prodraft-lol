@@ -9,6 +9,9 @@
     "start": "next start",
     "lint": "next lint"
   },
+  "files": [
+    ".next"
+  ],
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
     "@material-tailwind/react": "^2.1.9",

@@ -4,7 +4,6 @@ import fastifyCors from '@fastify/cors'
 import fastifyIO from "fastify-socket.io";
 import { Server } from "socket.io" // to fix io decorator ts error
 import closeWithGrace from 'close-with-grace'
-// import { RedisDatabase } from "./actions/database"
 import { DraftGame } from "./actions/playing"
 import { schClick, schReadyCheck, schRoomID, schValidate } from "./actions/schema"
 import { DefaultEventsMap } from "socket.io/dist/typed-events"
@@ -14,10 +13,9 @@ import { Room } from "./model/room";
 dotenv.config();
 
 // SERVER VARIABLES
-const PORT = parseInt(process.env.PORT || '3001', 10) // For the SERVER ; avoid conflict with 3000
+const PORT = parseInt(process.env.PORT || '8000', 10) // For the SERVER ; avoid conflict with 3000
 const HOST = process.env.HOST || '0.0.0.0'
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000'; // For the UI
-const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL
 const DRAFT_TIMER: { [roomID: string]: number } = {}
 const DRAFT = new DraftGame()
 const ROOMS: { [ROOM_ID: string]: Room } = {}
@@ -69,10 +67,6 @@ declare module "fastify" {
     }
 }
 
-if (!UPSTASH_REDIS_REST_URL) {
-    console.error("Missing UPSTRASH_REDIS_REST_URL")
-    process.exit(1)
-}
 
 //const DB = new RedisDatabase()
 
