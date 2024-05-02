@@ -1,0 +1,21 @@
+services:
+  server:
+    container_name: draft-server
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    build:
+      context: .
+      target: server
+    ports:
+      - "8000:8000"
+
+  ui:
+    container_name: draft-ui
+    build:
+      context: .
+      target: ui
+    ports:
+      - "3000:3000"
+
+  
