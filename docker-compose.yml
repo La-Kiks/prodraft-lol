@@ -18,4 +18,21 @@ services:
     ports:
       - "3000:3000"
 
+#   caddy: 
+#     image: caddy:2.8-alpine
+#     container_name: caddy-server
+#     restart: unless-stopped
+#     ports:
+#      - "80-80"
+#      - "443:443"
+#     volumes:
+#       - $PWD/Caddyfile:/etc/caddy/Caddyfile
+#       - $PWD/site:/srv
+#       - caddy_data:/data
+#       - caddy_config:/config
+      
+# volumes:
+#   caddy_data:
+#   caddy_config:
+
   

@@ -1,22 +1,21 @@
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/router";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useState } from "react";
 
 
-const PAGE_URL = process.env.NEXT_PUBLIC_PAGE_URL || "http://localhost:8000";
+const PAGE_URL = process.env.NEXT_PUBLIC_PAGE_URL || "http://localhost:3000";
+
 
 
 export default function DraftLinksPage() {
     const [copiedLink, setCopiedLink] = useState<string | null>(null);
-
     const router = useRouter()
-
     const { ROOM_ID, blueName, redName } = router.query as { ROOM_ID: string; blueName: string; redName: string; }
+    const globalQueryString = "?" + new URLSearchParams({ ROOM_ID, blueName, redName }).toString();
     const blueLink = `${PAGE_URL}/draft/${ROOM_ID}/blue`
     const redLink = `${PAGE_URL}/draft/${ROOM_ID}/red`
     const specLink = `${PAGE_URL}/draft/${ROOM_ID}`
     const streamLink = `${PAGE_URL}/draft/${ROOM_ID}/stream`
-    const linkRef = useRef(null)
 
 
     const handleCopy = (link: string) => {
@@ -46,29 +45,25 @@ export default function DraftLinksPage() {
 
     const streamClick = async (id: string) => {
         const url = `/draft/${id}/stream`
-        const queryString = new URLSearchParams({ ROOM_ID, blueName, redName }).toString();
-        const fullUrl = `${url}?${queryString}`;
+        const fullUrl = `${url}${globalQueryString}`;
         window.open(fullUrl, '_blank'); // Open link in new tab
     }
 
     const specClick = async (id: string) => {
         const url = `/draft/${id}`
-        const queryString = new URLSearchParams({ ROOM_ID, blueName, redName }).toString();
-        const fullUrl = `${url}?${queryString}`;
+        const fullUrl = `${url}${globalQueryString}`;
         window.open(fullUrl, '_blank'); // Open link in new tab
     }
 
     const blueClick = async (id: string) => {
         const url = `/draft/${id}/blue`
-        const queryString = new URLSearchParams({ ROOM_ID, blueName, redName }).toString();
-        const fullUrl = `${url}?${queryString}`;
+        const fullUrl = `${url}${globalQueryString}`;
         window.open(fullUrl, '_blank'); // Open link in new tab
     }
 
     const redClick = async (id: string) => {
         const url = `/draft/${id}/red`
-        const queryString = new URLSearchParams({ ROOM_ID, blueName, redName }).toString();
-        const fullUrl = `${url}?${queryString}`;
+        const fullUrl = `${url}${globalQueryString}`;
         window.open(fullUrl, '_blank'); // Open link in new tab
     }
 
