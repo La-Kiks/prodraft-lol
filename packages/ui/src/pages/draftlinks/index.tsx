@@ -12,10 +12,10 @@ export default function DraftLinksPage() {
     const router = useRouter()
     const { ROOM_ID, blueName, redName } = router.query as { ROOM_ID: string; blueName: string; redName: string; }
     const globalQueryString = "?" + new URLSearchParams({ ROOM_ID, blueName, redName }).toString();
-    const blueLink = `${PAGE_URL}/draft/${ROOM_ID}/blue`
-    const redLink = `${PAGE_URL}/draft/${ROOM_ID}/red`
-    const specLink = `${PAGE_URL}/draft/${ROOM_ID}`
-    const streamLink = `${PAGE_URL}/draft/${ROOM_ID}/stream`
+    const blueLink = `${PAGE_URL}/draft/${ROOM_ID}/blue${globalQueryString}`
+    const redLink = `${PAGE_URL}/draft/${ROOM_ID}/red${globalQueryString}`
+    const specLink = `${PAGE_URL}/draft/${ROOM_ID}${globalQueryString}`
+    const streamLink = `${PAGE_URL}/draft/${ROOM_ID}/stream${globalQueryString}`
 
 
     const handleCopy = (link: string) => {
