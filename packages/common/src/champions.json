@@ -1234,7 +1234,7 @@
     "name": "Smolder",
     "alt_name": "",
     "tags": "BOTTOM, MIDDLE, TOP",
-    "champ_sq": "https://raw.communitydragon.org/latest/game/assets/characters/smolder/hud/smolder_square_0.smolder.png",
+    "champ_sq": "https://raw.communitydragon.org/latest/game/assets/characters/smolder/hud/smolder_square_0.png",
     "champ_ct": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-splashes/901/901000.jpg",
     "pick_v": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-choose-vo/901.ogg",
     "ban_v": "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-ban-vo/901.ogg"
