@@ -9,8 +9,6 @@ export async function versionIsUpToDate() {
         const data = await response.json()
         const liveVersion = data[0]
         const filePath = path.join(__dirname, 'version.txt')
-
-
         if (
             existsSync(filePath) === false ||
             readFileSync(filePath, "utf-8").trim() !== liveVersion
@@ -22,10 +20,8 @@ export async function versionIsUpToDate() {
             console.log(`Version is already up to date : ${liveVersion}`);
             return true;
         }
-
     } catch (e) {
         console.error("Error fetching data", e)
         throw new DownloadFailed("DL failed : Version")
     }
-
 }

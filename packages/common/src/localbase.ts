@@ -7,18 +7,13 @@ import path from "path";
 
 export class LocalData {
 
+    // create the champions.json -- with all the champions informations
     async createJson() {
-        const version = await versionIsUpToDate()
-        if (version === false) {
-            const champObj = new UpdateChampions()
-            const data = await champObj.createChampionsData()
-            // creating the JSON
-            champObj.createChampionsJson(data)
-            console.log('New champions.json !')
-            return
-        } else {
-            console.log('Did not update the champions.json !')
-        }
+        const champObj = new UpdateChampions()
+        const data = await champObj.createChampionsData()
+        champObj.createChampionsJson(data)
+        console.log('New champions.json !')
+        return
     }
 
     async getAllChampions(): Promise<any> {

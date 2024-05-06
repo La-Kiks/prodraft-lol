@@ -10,28 +10,24 @@ const PATH = path.join(__dirname, '../public/cards/')
 const DATA = new LocalData()
 
 
-// This function will only create cards if they do not exist yet and new patch 
+// This function will only create images cards 
 async function createCards() {
-    const version = await versionIsUpToDate()
-    if (version === false) {
-        const champData: { [key: string]: Champion } = await DATA.getAllChampions()
-        delete champData.Helmet                             // Helmet can't be carded
-        Object.keys(champData).forEach(championKey => {
-            const champion: Champion = champData[championKey]
-            const filePath = path.join(PATH, `${championKey}-card.jpg`)
-            try {
-                fs.accessSync(filePath, fs.constants.F_OK)
-            } catch (error: any) {
-                if (error.code === 'ENOENT') {
-                    imageToCard(championKey, champion.champ_ct)
-                } else {
-                    console.error('Error checking file existence', error)
-                }
+    const champData: { [key: string]: Champion } = await DATA.getAllChampions()
+    delete champData.Helmet                             // Helmet can't be carded
+    Object.keys(champData).forEach(championKey => {
+        const champion: Champion = champData[championKey]
+        const filePath = path.join(PATH, `${championKey}-card.jpg`)
+        try {
+            fs.accessSync(filePath, fs.constants.F_OK)
+        } catch (error: any) {
+            if (error.code === 'ENOENT') {
+                imageToCard(championKey, champion.champ_ct)
+            } else {
+                console.error('Error checking file existence', error)
             }
-        })
-    } else {
-        console.log('No new cards')
-    }
+        }
+    })
+
 }
 
 async function imageToCard(name: string, url: string) {
