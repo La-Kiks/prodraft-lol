@@ -14,8 +14,8 @@ dotenv.config();
 
 // SERVER VARIABLES
 const PORT = parseInt(process.env.PORT || '8000', 10) // For the SERVER ; avoid conflict with 3000
-const HOST = process.env.HOST || '0.0.0.0'
-const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://0.0.0.0:3000'; // For the UI
+const HOST = process.env.HOST || 'localhost'
+const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:3000'; // For the UI
 const DRAFT_TIMER: { [roomID: string]: number } = {}
 const DRAFT = new DraftGame()
 const ROOMS: { [ROOM_ID: string]: Room } = {}
