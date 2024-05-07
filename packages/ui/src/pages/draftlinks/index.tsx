@@ -70,7 +70,7 @@ export default function DraftLinksPage() {
     return (
         <main className="flex flex-col p-4 h-screen w-full m-auto items-center bg-slate-800">
             <div className="p-2 md:mt-28 md:mb-64 md:text-8xl mt-14 mb-14 text-5xl flex  justify-center  text-white hover:text-slate-300">
-                <h1>Prodraft.lol</h1>
+                <h1>lolprodraft</h1>
             </div>
             <form onSubmit={handleSubmit} className="flex justify-center  w-full  ">
                 <div className="flex flex-col  w-full max-w-sm  ">

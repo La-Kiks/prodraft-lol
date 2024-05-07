@@ -11,7 +11,7 @@ export default function Custom404() {
     return (
         <main className="flex flex-col p-4 h-screen w-full items-center  m-auto bg-slate-800">
             <div className="p-2 mt-28 mb-64 flex content-start justify-center text-8xl text-white hover:text-slate-300">
-                <h1 onClick={() => bannerClick()}>Prodraft.lol</h1>
+                <h1 onClick={() => bannerClick()}>lolprodraft.com</h1>
             </div>
             <div onClick={() => bannerClick()}
                 className="flex flex-col p-2  max-w-3xl content-start items-center justify-center text-4xl text-white hover:text-slate-300">

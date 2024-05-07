@@ -72,7 +72,7 @@ export default function Home() {
   return (
     <main className="flex flex-col p-4 h-screen w-full items-center  m-auto bg-slate-800">
       <div className="p-2 md:mt-28 md:mb-64 md:text-8xl mt-14 mb-14 text-5xl flex content-start justify-center  text-white hover:text-slate-300">
-        <h1>Prodraft.lol</h1>
+        <h1>lolprodraft</h1>
       </div>
       <form onSubmit={handleSubmit} className="flex ">
         <div className="flex flex-col items-center p-2 m-2 ">

@@ -399,7 +399,7 @@ export default function RedDraftPage() {
     return (
         <main className="flex flex-col p-0 w-full min-h-screen min-w-[540px] space-y-0 m-auto  items-center place-content-start bg-slate-800 bg-gradient-to-r from-blue-900 to-red-900">
             <div className="p-2 mt-8 mb-8 flex content-start justify-center text-4xl text-white hover:text-slate-300">
-                <h1 onClick={() => bannerClick()}>Prodraft.lol</h1>
+                <h1 onClick={() => bannerClick()}>lolprodraft</h1>
             </div>
 
             <div className="max-w-5xl w-full flex flex-col items-center border rounded border-slate-500 bg-slate-700 bg-gradient-to-r from-blue-900 to-red-900">
