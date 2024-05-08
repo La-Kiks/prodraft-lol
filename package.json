@@ -2,7 +2,6 @@
   "name": "prodraft-lol",
   "description": "",
   "scripts": {
-    "dev": "pnpm -r --parallel --filter='./packages/*' run dev",
-    "build": "pnpm -r --parallel --filter='./packages/*' run build"
+    "dev": "pnpm -r --parallel --filter='./packages/*' run dev"
   }
 }

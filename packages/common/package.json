@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "update-champions": "tsx src/createChampionsJason.ts",
+    "update-version": "tsx src/version.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

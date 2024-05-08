@@ -25,3 +25,5 @@ export async function versionIsUpToDate() {
         throw new DownloadFailed("DL failed : Version")
     }
 }
+
+versionIsUpToDate()
