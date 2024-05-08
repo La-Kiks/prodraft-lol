@@ -74,16 +74,24 @@ const CopyArrayButton: React.FC<CopyArrayButtonProps> = ({ myarray }) => {
 export default function SpecDraftPage() {
     // useState declarations :
     const [champdata, setChampdata] = useState<{ [key: string]: Champion }>({});
-    const [champArray, setChampArray] = useState<string[]>(new Array(20).fill('Helmet'))
+    const [champArray, setChampArray] = useState<string[]>(new Array(20).fill(''))
     const [slotIndex, setSlotIndex] = useState(0)
     const [timer, setTimer] = useState(69)
     const [gamePhase, setGamePhase] = useState<string>('WAITING')
     const [turn, setTurn] = useState('')
+    const [champDisabled, setChampDisabled] = useState<{ [name: string]: boolean }>({})
+    const [volume, setVolume] = useState<number>(1)
     const [spectators, setSpectators] = useState(0)
     const [blues, setBlues] = useState(0)
     const [reds, setReds] = useState(0)
-
     const [csvDraft, setCsvDraft] = useState<string[]>(new Array(20).fill(''))
+    const [searchQuery, setSearchQuery] = useState('')
+    const [filterByTopTag, setFilterByTopTag] = useState(false);
+    const [filterByJunTag, setFilterByJunTag] = useState(false);
+    const [filterByMidTag, setFilterByMidTag] = useState(false);
+    const [filterByAdcTag, setFilterByAdcTag] = useState(false);
+    const [filterBySupTag, setFilterBySupTag] = useState(false);
+
 
     // Other declarations
     const router = useRouter();
@@ -186,12 +194,16 @@ export default function SpecDraftPage() {
             ])
         }
     }, [gamePhase])
+
     // timer logc
     useEffect(() => {
         if (gamePhase == 'PLAYING') {
             const countdown = setTimeout(() => {
                 if (timer > 0) {
                     setTimer(prevTimer => prevTimer - 1);
+                    if (timer < 10 && timer >= 0) {
+                        playSoundTimerLow(volume)
+                    }
                 }
             }, 1000);
             return () => clearTimeout(countdown)
@@ -201,14 +213,135 @@ export default function SpecDraftPage() {
     // Reset timer on new idx (new pick/ban)
     useEffect(() => {
         if (gamePhase == 'PLAYING') {
-            setTimer(60)
+            setTimer(30)
         }
+        if (champArray) {
+            setChampDisabled(createDisabledObject(champArray))
+        }
+
+        playSoundValidate(volume)
+
     }, [slotIndex])
+
+    // Picked & banned champions => disabled
+    const createDisabledObject = (champArray: string[]): { [name: string]: boolean } => {
+        const disObject: { [name: string]: boolean } = {}
+        champArray.forEach((name) => {
+            if (name === 'Helmet') {
+                disObject[name] = false
+            } else {
+                disObject[name] = true
+            }
+        })
+        return disObject
+    }
 
     // Redirect to the base page
     const bannerClick = async () => {
         await router.push(`/`)
     }
+
+    //Sounds
+    const playSoundTurn = (volume: number) => {
+        const audio = new Audio('https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-draft-pick-intro.ogg')
+        audio.volume = volume
+        audio.play()
+    }
+
+    const playSoundValidate = (volume: number) => {
+        const audio = new Audio('https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-lockin-button-click.ogg')
+        audio.volume = volume
+        audio.play()
+    }
+
+    const playSoundTimerLow = (volume: number) => {
+        const audio = new Audio('https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-timer-tick.ogg')
+        audio.volume = volume
+        audio.play()
+    }
+
+    const volumeOnOff = () => {
+        if (volume === 1) {
+            setVolume(0)
+        } else if (volume === 0) {
+            setVolume(1)
+        }
+    }
+
+    // Search bar
+    const handleSearch = (event: any) => {
+        setSearchQuery(event.target.value)
+    }
+
+    const filteredChampions = Object.entries(champdata).filter(([championName, champion]) => {
+        if (filterByTopTag && champion.tags && champion.tags.includes('TOP') && champion.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+            return true
+        } if (filterByJunTag && champion.tags && champion.tags.includes('JUNGLE') && champion.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+            return true
+        } if (filterByMidTag && champion.tags && champion.tags.includes('MIDDLE') && champion.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+            return true
+        } if (filterByAdcTag && champion.tags && champion.tags.includes('BOTTOM') && champion.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+            return true
+        } if (filterBySupTag && champion.tags && champion.tags.includes('SUPPORT') && champion.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+            return true
+        }
+        if (!filterByTopTag && !filterByJunTag && !filterByMidTag && !filterByAdcTag && !filterBySupTag) {
+            if (searchQuery.trim() === '') {
+                return true;
+            } if (champion.name.toString().includes(searchQuery)) {
+                return true;
+            } if (championName.toLowerCase().includes(searchQuery.toLowerCase())) {
+                return true;
+            }
+        }
+        return false;
+    });
+
+    // filter buttons
+    const handleFilterByTopTag = () => {
+        setFilterByTopTag(!filterByTopTag);
+        setFilterByJunTag(false)
+        setFilterByMidTag(false);
+        setFilterByAdcTag(false)
+        setFilterBySupTag(false)
+        setSearchQuery('')
+    };
+
+    const handleFilterByJunTag = () => {
+        setFilterByTopTag(false);
+        setFilterByJunTag(!filterByJunTag)
+        setFilterByMidTag(false);
+        setFilterByAdcTag(false)
+        setFilterBySupTag(false)
+        setSearchQuery('')
+    };
+
+    const handleFilterByMidTag = () => {
+        setFilterByTopTag(false);
+        setFilterByJunTag(false)
+        setFilterByMidTag(!filterByMidTag);
+        setFilterByAdcTag(false)
+        setFilterBySupTag(false)
+        setSearchQuery('')
+    };
+
+    const handleFilterByAdcTag = () => {
+        setFilterByTopTag(false);
+        setFilterByJunTag(false)
+        setFilterByMidTag(false);
+        setFilterByAdcTag(!filterByAdcTag)
+        setFilterBySupTag(false)
+        setSearchQuery('')
+    };
+
+    const handleFilterBySupTag = () => {
+        setFilterByTopTag(false);
+        setFilterByJunTag(false)
+        setFilterByMidTag(false);
+        setFilterByAdcTag(false)
+        setFilterBySupTag(!filterBySupTag)
+        setSearchQuery('')
+    };
 
     // Return the page view :
     return (
@@ -217,9 +350,10 @@ export default function SpecDraftPage() {
                 <h1 onClick={() => bannerClick()}>lolprodraft</h1>
             </div>
 
-            <div className="max-w-5xl w-full flex flex-col items-center border rounded border-slate-500 bg-slate-700 bg-gradient-to-r from-blue-900 to-red-900">
+            <div className="max-w-5xl w-full flex flex-col items-center border rounded border-slate-500 bg-slate-700  bg-gradient-to-r from-blue-900 to-red-900">
 
-                {/* DRAFT HEADER :bg-slate-100
+                {/* DRAFT HEADER 
+                BOX 0 : Nb blue/red players
                 BOX 1 : Blue team name  + blue teams bans (x3)
                 BOX 2 : Timer
                 BOX 3 : Red team name + red team bans (x3)
@@ -247,25 +381,45 @@ export default function SpecDraftPage() {
                         <div className={`team-name max-w-48 sm:max-w-96 text-white bg-blue-500 p-1 transition-width duration-500 ${turn === 'red' ? 'w-1/2 ' : 'w-full'}`}>
                             <h1 className="text-xl overflow-hidden">{blueName}</h1>
                         </div>
-                        <div className="team-bans w-fit flex">
+                        <div className="team-bans mx-0.5 w-fit flex">
                             {champArray && champArray[0] && champdata && champdata[champArray[0]] && champdata[champArray[0]]['champ_sq'] ? (
-                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 0) ? 'animate-pulse' : ''}`} alt={champdata[champArray[0]]['name']}
+                                <img className={`mx-0.5 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 0) ? 'animate-pulse' : ''}`} alt={champdata[champArray[0]]['name']}
                                     src={champdata[champArray[0]]['champ_sq']} />
                             ) : (
-                                <img className="p-1 w-20 h-20"
-                                    src={helmetUrl} alt="Helmet placeholder" />
+                                <div className="mx-0.5 w-fit">
+                                    <svg className={`p-1 h-20 w-20 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 0) ? 'animate-pulse' : ''}`}
+                                        width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
+                                        strokeLinecap="round" strokeLinejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" />
+                                        <circle cx="12" cy="12" r="9" />  <line x1="5.7" y1="5.7" x2="18.3" y2="18.3" />
+                                    </svg>
+                                </div>
                             )}
                             {champArray && champArray[2] && champdata && champdata[champArray[2]] && champdata[champArray[2]]['champ_sq'] ? (
-                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 2) ? 'animate-pulse' : ''}`} alt={champdata[champArray[2]]['name']}
+                                <img className={`mr-0.5 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 2) ? 'animate-pulse' : ''}`} alt={champdata[champArray[2]]['name']}
                                     src={champdata[champArray[2]]['champ_sq']} />
                             ) : (
-                                <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
+                                <div className="mr-0.5 w-fit">
+                                    <svg className={`p-1 h-20 w-20 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 2) ? 'animate-pulse' : ''}`}
+                                        width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
+                                        strokeLinecap="round" strokeLinejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" />
+                                        <circle cx="12" cy="12" r="9" />  <line x1="5.7" y1="5.7" x2="18.3" y2="18.3" />
+                                    </svg>
+                                </div>
                             )}
                             {champArray && champArray[4] && champdata && champdata[champArray[4]] && champdata[champArray[4]]['champ_sq'] ? (
-                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 4) ? 'animate-pulse' : ''}`} alt={champdata[champArray[4]]['name']}
+                                <img className={`mr-0.5 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 4) ? 'animate-pulse' : ''}`} alt={champdata[champArray[4]]['name']}
                                     src={champdata[champArray[4]]['champ_sq']} />
                             ) : (
-                                <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
+                                <div className="mr-0.5 w-fit">
+                                    <svg className={`p-1 h-20 w-20 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 4) ? 'animate-pulse' : ''}`}
+                                        width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
+                                        strokeLinecap="round" strokeLinejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" />
+                                        <circle cx="12" cy="12" r="9" />  <line x1="5.7" y1="5.7" x2="18.3" y2="18.3" />
+                                    </svg>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -276,24 +430,45 @@ export default function SpecDraftPage() {
                         <div className={`team-name max-w-48 sm:max-w-96 text-white bg-red-500 flex flex-row-reverse p-1 transition-width duration-500 ${turn === 'blue' ? 'w-1/2' : 'w-full '}`}>
                             <h1 className="text-xl overflow-hidden">{redName}</h1>
                         </div>
-                        <div className="team-bans mx-1 w-fit flex flex-row-reverse ">
+                        <div className="team-bans mx-0.5 w-fit flex flex-row-reverse ">
                             {champArray && champArray[1] && champdata && champdata[champArray[1]] && champdata[champArray[1]]['champ_sq'] ? (
-                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 1) ? 'animate-pulse' : ''}`} alt={champdata[champArray[1]]['name']}
+                                <img className={`mx-0.5 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 1) ? 'animate-pulse' : ''}`} alt={champdata[champArray[1]]['name']}
                                     src={champdata[champArray[1]]['champ_sq']} />
                             ) : (
-                                <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
+                                <div className="mx-0.5 w-fit">
+                                    <svg className={`p-1 h-20 w-20 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 1) ? 'animate-pulse' : ''}`}
+                                        width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
+                                        strokeLinecap="round" strokeLinejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" />
+                                        <circle cx="12" cy="12" r="9" />  <line x1="5.7" y1="5.7" x2="18.3" y2="18.3" />
+                                    </svg>
+                                </div>
                             )}
                             {champArray && champArray[3] && champdata && champdata[champArray[3]] && champdata[champArray[3]]['champ_sq'] ? (
-                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 3) ? 'animate-pulse' : ''}`} alt={champdata[champArray[3]]['name']}
+                                <img className={`ml-0.5 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 3) ? 'animate-pulse' : ''}`} alt={champdata[champArray[3]]['name']}
                                     src={champdata[champArray[3]]['champ_sq']} />
                             ) : (
-                                <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
+                                <div className="ml-0.5 w-fit">
+                                    <svg className={`p-1 h-20 w-20 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 3) ? 'animate-pulse' : ''}`}
+                                        width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
+                                        strokeLinecap="round" strokeLinejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" />
+                                        <circle cx="12" cy="12" r="9" />  <line x1="5.7" y1="5.7" x2="18.3" y2="18.3" />
+                                    </svg>
+                                </div>
                             )}
                             {champArray && champArray[5] && champdata && champdata[champArray[5]] && champdata[champArray[5]]['champ_sq'] ? (
-                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 5) ? 'animate-pulse' : ''}`} alt={champdata[champArray[5]]['name']}
+                                <img className={`ml-0.5 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 5) ? 'animate-pulse' : ''}`} alt={champdata[champArray[5]]['name']}
                                     src={champdata[champArray[5]]['champ_sq']} />
                             ) : (
-                                <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
+                                <div className="ml-0.5 w-fit">
+                                    <svg className={`p-1 h-20 w-20 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 5) ? 'animate-pulse' : ''}`}
+                                        width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
+                                        strokeLinecap="round" strokeLinejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" />
+                                        <circle cx="12" cy="12" r="9" />  <line x1="5.7" y1="5.7" x2="18.3" y2="18.3" />
+                                    </svg>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -310,115 +485,251 @@ export default function SpecDraftPage() {
                     <div className="box1 flex flex-col h-full justify-around  basis-1/3 md:basis-3/12 ">
 
                         {champArray && champArray[6] && champdata && champdata[champArray[6]] && champdata[champArray[6]]['champ_sq'] ? (
-                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 6) ? 'animate-pulse' : ''}`} alt={champdata[champArray[6]]['name']}
+                            <img className={`mx-1 mt-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 6) ? 'animate-pulse' : ''}`} alt={champdata[champArray[6]]['name']}
                                 src={champdata[champArray[6]]['champ_sq']} />
                         ) : (
-                            <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
+                            <div className="mx-1 mt-1 w-fit">
+                                <svg className={`p-1 h-28 w-28 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 6) ? 'animate-pulse' : ''}`}
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
+                                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
                         )}
                         {champArray && champArray[9] && champdata && champdata[champArray[9]] && champdata[champArray[9]]['champ_sq'] ? (
-                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 9) ? 'animate-pulse' : ''}`} alt={champdata[champArray[9]]['name']}
+                            <img className={`mx-1 mt-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 9) ? 'animate-pulse' : ''}`} alt={champdata[champArray[9]]['name']}
                                 src={champdata[champArray[9]]['champ_sq']} />
                         ) : (
-                            <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
+                            <div className="mx-1 mt-1 w-fit">
+                                <svg className={`p-1 h-28 w-28 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 9) ? 'animate-pulse' : ''}`}
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
+                                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
                         )}
                         {champArray && champArray[10] && champdata && champdata[champArray[10]] && champdata[champArray[10]]['champ_sq'] ? (
-                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 10) ? 'animate-pulse' : ''}`} alt={champdata[champArray[10]]['name']}
+                            <img className={`mx-1 mt-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 10) ? 'animate-pulse' : ''}`} alt={champdata[champArray[10]]['name']}
                                 src={champdata[champArray[10]]['champ_sq']} />
                         ) : (
-                            <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
+                            <div className="mx-1 mt-1 w-fit">
+                                <svg className={`p-1 h-28 w-28 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 10) ? 'animate-pulse' : ''}`}
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
+                                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
                         )}
 
-                        <div className="bans2 flex w-fit">
+                        <div className="bans2 flex mx-1 mt-1 w-fit">
 
                             {champArray && champArray[13] && champdata && champdata[champArray[13]] && champdata[champArray[13]]['champ_sq'] ? (
-                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 13) ? 'animate-pulse' : ''}`} alt={champdata[champArray[13]]['name']}
+                                <img className={`mr-0.5 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 13) ? 'animate-pulse' : ''}`} alt={champdata[champArray[13]]['name']}
                                     src={champdata[champArray[13]]['champ_sq']} />
                             ) : (
-                                <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
+                                <div className="mr-1 w-fit">
+                                    <svg className={`p-1 h-20 w-20 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 13) ? 'animate-pulse' : ''}`}
+                                        width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
+                                        strokeLinecap="round" strokeLinejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" />
+                                        <circle cx="12" cy="12" r="9" />  <line x1="5.7" y1="5.7" x2="18.3" y2="18.3" />
+                                    </svg>
+                                </div>
                             )}
                             {champArray && champArray[15] && champdata && champdata[champArray[15]] && champdata[champArray[15]]['champ_sq'] ? (
-                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 15) ? 'animate-pulse' : ''}`} alt={champdata[champArray[15]]['name']}
+                                <img className={`mr-0.5 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 15) ? 'animate-pulse' : ''}`} alt={champdata[champArray[15]]['name']}
                                     src={champdata[champArray[15]]['champ_sq']} />
                             ) : (
-                                <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
+                                <svg className={`p-1 h-20 w-20 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 15) ? 'animate-pulse' : ''}`}
+                                    width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
+                                    strokeLinecap="round" strokeLinejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" />
+                                    <circle cx="12" cy="12" r="9" />  <line x1="5.7" y1="5.7" x2="18.3" y2="18.3" />
+                                </svg>
                             )}
 
                         </div>
 
                         {champArray && champArray[17] && champdata && champdata[champArray[17]] && champdata[champArray[17]]['champ_sq'] ? (
-                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 17) ? 'animate-pulse' : ''}`} alt={champdata[champArray[17]]['name']}
+                            <img className={`mx-1 mt-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 17) ? 'animate-pulse' : ''}`} alt={champdata[champArray[17]]['name']}
                                 src={champdata[champArray[17]]['champ_sq']} />
                         ) : (
-                            <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
+                            <div className="mx-1 mt-1 w-fit">
+                                <svg className={`p-1 h-28 w-28 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 17) ? 'animate-pulse' : ''}`}
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
+                                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
                         )}
                         {champArray && champArray[18] && champdata && champdata[champArray[18]] && champdata[champArray[18]]['champ_sq'] ? (
-                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 18) ? 'animate-pulse' : ''}`} alt={champdata[champArray[18]]['name']}
+                            <img className={`mx-1 mt-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 18) ? 'animate-pulse' : ''}`} alt={champdata[champArray[18]]['name']}
                                 src={champdata[champArray[18]]['champ_sq']} />
                         ) : (
-                            <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
+                            <div className="mx-1 mt-1 w-fit">
+                                <svg className={`p-1 h-28 w-28 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 18) ? 'animate-pulse' : ''}`}
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
+                                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
                         )}
 
                     </div>
 
-                    <div className=" box2   h-[640px] w-full flex justify-content items-center basis-1/3 md:basis-6/12 ">
-                        {gamePhase === 'PLAYING' && champArray && champArray[slotIndex] && champdata && champdata[champArray[slotIndex]] && champdata[champArray[slotIndex]]['champ_ct'] ? (
-                            <img className="border-4 rounded border-slate-800 m-auto w-auto h-auto" alt={champdata[champArray[slotIndex]]['name']}
-                                src={champdata[champArray[slotIndex]]['champ_ct']} />
-                        ) : (
+                    <div className="box2   h-[640px] w-full flex flex-col items-center basis-1/3 md:basis-6/12 ">
+                        <div className="header flex flex-wrap justify-around w-full ">
+                            <div className="flex">
+                                <button onClick={handleFilterByTopTag}>
+                                    <img className={`mx-0.5 max-w-11 max-h-11 ${(filterByTopTag) ? 'border' : ''}`}
+                                        src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/svg/position-top.svg"
+                                        alt="Toplaners"
+                                    />
+                                </button>
+                                <button onClick={handleFilterByJunTag}>
+                                    <img className={`mx-0.5 max-w-11 max-h-11 ${(filterByJunTag) ? 'border' : ''}`}
+                                        src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/svg/position-jungle.svg"
+                                        alt="Junglers"
+                                    />
+                                </button>
+                                <button onClick={handleFilterByMidTag}>
+                                    <img className={` mx-0.5 max-w-11 max-h-11 ${(filterByMidTag) ? 'border' : ''}`}
+                                        src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/svg/position-middle.svg"
+                                        alt="Midlaners"
+                                    />
+                                </button>
+                                <button onClick={handleFilterByAdcTag}>
+                                    <img className={`mx-0.5 max-w-11 max-h-11 ${(filterByAdcTag) ? 'border' : ''}`}
+                                        src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/svg/position-lane.svg"
+                                        alt="Botlaners"
+                                    />
+                                </button>
+                                <button onClick={handleFilterBySupTag}>
+                                    <img className={`mx-0.5 max-w-11 max-h-11 ${(filterBySupTag) ? 'border' : ''}`}
+                                        src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/svg/position-utility.svg"
+                                        alt="Support"
+                                    />
+                                </button>
+                            </div>
+                            <div className="p-1">
+                                <input
+                                    type="text"
+                                    className=" m-0 block w-full rounded border border-solid border-neutral-200 bg-transparent bg-clip-padding px-3 py-[0.25rem] text-base font-normal leading-[1.6] text-surface outline-none transition duration-200 ease-in-out placeholder:text-neutral-500 focus:z-[3] focus:border-primary focus:shadow-inset focus:outline-none motion-reduce:transition-none dark:border-white/10 text-white dark:placeholder:text-neutral-200 dark:autofill:shadow-autofill dark:focus:border-primary"
+                                    placeholder="Search"
+                                    value={searchQuery}
+                                    onChange={handleSearch} />
+                            </div>
+                        </div>
+                        <div className="grid gap-0  overflow-y-scroll grid-cols-1 sm:grid-cols-2 md:grid-cols-5 lg:grid-cols-6  ">
 
-                            <h1 className="p-1 text-xl text-white m-auto"> . . . </h1>
-                        )}
+                            {filteredChampions.length > 0 ? (
+                                filteredChampions.map(([championName, champion]) => (
+
+                                    <img className={`w-20 h-20 p-0.5 rounded-md ${champDisabled[championName] ? 'filter grayscale cursor-not-allowed ' : ' hover:bg-slate-500'}`}
+                                        key={champion.name}
+                                        id={champion.name}
+                                        src={champion.champ_sq} alt={champion.name}
+                                    />
+
+                                ))
+                            ) : (
+                                <h1 className="text-slate-400 m-auto">No champs...</h1>
+                            )}
+
+                        </div>
                     </div>
 
                     <div className="box3 flex flex-col h-full justify-around items-end basis-1/3 md:basis-3/12 ">
 
                         {champArray && champArray[7] && champdata && champdata[champArray[7]] && champdata[champArray[7]]['champ_sq'] ? (
-                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 7) ? 'animate-pulse' : ''}`} alt={champdata[champArray[7]]['name']}
+                            <img className={`mx-1 mt-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 7) ? 'animate-pulse' : ''}`} alt={champdata[champArray[7]]['name']}
                                 src={champdata[champArray[7]]['champ_sq']} />
                         ) : (
-                            <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
+                            <div className="mx-1 mt-1 w-fit">
+                                <svg className={`p-1 h-28 w-28 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 7) ? 'animate-pulse' : ''}`}
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
+                                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
                         )}
                         {champArray && champArray[8] && champdata && champdata[champArray[8]] && champdata[champArray[8]]['champ_sq'] ? (
-                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 8) ? 'animate-pulse' : ''}`} alt={champdata[champArray[8]]['name']}
+                            <img className={`mx-1 mt-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 8) ? 'animate-pulse' : ''}`} alt={champdata[champArray[8]]['name']}
                                 src={champdata[champArray[8]]['champ_sq']} />
                         ) : (
-                            <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
+                            <div className="mx-1 mt-1 w-fit">
+                                <svg className={`p-1 h-28 w-28 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 8) ? 'animate-pulse' : ''}`}
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
+                                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
                         )}
                         {champArray && champArray[11] && champdata && champdata[champArray[11]] && champdata[champArray[11]]['champ_sq'] ? (
-                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 11) ? 'animate-pulse' : ''}`} alt={champdata[champArray[11]]['name']}
+                            <img className={`mx-1 mt-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 11) ? 'animate-pulse' : ''}`} alt={champdata[champArray[11]]['name']}
                                 src={champdata[champArray[11]]['champ_sq']} />
                         ) : (
-                            <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
+                            <div className="mx-1 mt-1 w-fit">
+                                <svg className={`p-1 h-28 w-28 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 11) ? 'animate-pulse' : ''}`}
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
+                                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
                         )}
 
-                        <div className="bans2 flex flex-row-reverse  w-fit">
+                        <div className="bans2 flex flex-row-reverse mx-1 mt-1 w-fit">
 
                             {champArray && champArray[12] && champdata && champdata[champArray[12]] && champdata[champArray[12]]['champ_sq'] ? (
-                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 12) ? 'animate-pulse' : ''}`} alt={champdata[champArray[12]]['name']}
+                                <img className={`ml-0.5 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 12) ? 'animate-pulse' : ''}`} alt={champdata[champArray[12]]['name']}
                                     src={champdata[champArray[12]]['champ_sq']} />
                             ) : (
-                                <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
+                                <div className="ml-1 w-fit">
+                                    <svg className={`p-1 h-20 w-20 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 12) ? 'animate-pulse' : ''}`}
+                                        width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
+                                        strokeLinecap="round" strokeLinejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" />
+                                        <circle cx="12" cy="12" r="9" />  <line x1="5.7" y1="5.7" x2="18.3" y2="18.3" />
+                                    </svg>
+                                </div>
                             )}
                             {champArray && champArray[14] && champdata && champdata[champArray[14]] && champdata[champArray[14]]['champ_sq'] ? (
-                                <img className={`p-1 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 14) ? 'animate-pulse' : ''}`} alt={champdata[champArray[14]]['name']}
+                                <img className={`ml-0.5 w-20 h-20 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 14) ? 'animate-pulse' : ''}`} alt={champdata[champArray[14]]['name']}
                                     src={champdata[champArray[14]]['champ_sq']} />
                             ) : (
-                                <img className="p-1 w-20 h-20" src={helmetUrl} alt="Helmet placeholder" />
+                                <svg className={`p-1 h-20 w-20 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 14) ? 'animate-pulse' : ''}`}
+                                    width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none"
+                                    strokeLinecap="round" strokeLinejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" />
+                                    <circle cx="12" cy="12" r="9" />  <line x1="5.7" y1="5.7" x2="18.3" y2="18.3" />
+                                </svg>
                             )}
 
                         </div>
 
                         {champArray && champArray[16] && champdata && champdata[champArray[16]] && champdata[champArray[16]]['champ_sq'] ? (
-                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 16) ? 'animate-pulse' : ''}`} alt={champdata[champArray[16]]['name']}
+                            <img className={`mx-1 mt-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 16) ? 'animate-pulse' : ''}`} alt={champdata[champArray[16]]['name']}
                                 src={champdata[champArray[16]]['champ_sq']} />
                         ) : (
-                            <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
+                            <div className="mx-1 mt-1 w-fit">
+                                <svg className={`p-1 h-28 w-28 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 16) ? 'animate-pulse' : ''}`}
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
+                                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
                         )}
                         {champArray && champArray[19] && champdata && champdata[champArray[19]] && champdata[champArray[19]]['champ_sq'] ? (
-                            <img className={`p-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 19) ? 'animate-pulse' : ''}`} alt={champdata[champArray[19]]['name']}
+                            <img className={`mx-1 mt-1 w-28 h-28 ${(gamePhase === 'PLAYING' && slotIndex === 19) ? 'animate-pulse' : ''}`} alt={champdata[champArray[19]]['name']}
                                 src={champdata[champArray[19]]['champ_sq']} />
                         ) : (
-                            <img className="p-1 w-28 h-28" src={helmetUrl} alt="Helmet placeholder" />
+                            <div className="mx-1 mt-1 w-fit">
+                                <svg className={`p-1 h-28 w-28 text-slate-400 bg-slate-800 border border-slate-700 ${(gamePhase === 'PLAYING' && slotIndex === 19) ? 'animate-pulse' : ''}`}
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1"
+                                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
                         )}
 
                     </div>
@@ -428,9 +739,37 @@ export default function SpecDraftPage() {
                  BOX 1 : BUTTON TO VALIDATE THE CURRENT ACTION
                 */}
 
-                <div className="draft-footer w-full flex items-center  justify-center ">
-                    <h1 className=" w-auto h-12 p-2 mt-10 mb-10 text-lg flex-shrink-0 text-white"> Spectators : {spectators}</h1>
+                <div className="p-2 w-full m-auto flex flex-row flex-nowrap items-center justify-between">
+                    <div onClick={volumeOnOff}>{(volume === 0) ? (
+                        <svg className="h-10 w-20 text-white "
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                            <line x1="23" y1="9" x2="17" y2="15" />  <line x1="17" y1="9" x2="23" y2="15" />
+                        </svg>
+                    ) : (
+                        <svg className="h-10 w-20 text-white"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+                        </svg>
+                    )}
+                    </div>
+                    <div className="button-box w-24 h-12 p-2 mt-10 mb-10">
+
+                    </div>
+                    <div className="flex justify-center items-center w-20">
+                        <svg className="h-10 w-10 text-white"
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        <h1 className="ml-4 mb-1  text-white text-xl">{spectators}</h1>
+
+                    </div>
                 </div>
+
             </div>
             {gamePhase === 'OVER' ? (
                 <div className="p-6 m-6">

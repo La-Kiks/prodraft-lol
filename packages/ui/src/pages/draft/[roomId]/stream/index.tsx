@@ -76,8 +76,6 @@ export default function StreamDraftPage() {
     const helmetUrl = "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-collections/global/default/icon-helmet.png"
 
 
-
-
     // INITIALIZE STEP 0 - champ grid + waiting room + not ready
     useEffect(() => {
         socket?.on('connect', () => {
@@ -203,7 +201,6 @@ export default function StreamDraftPage() {
     }
 
 
-
     // Return the page view :
     return (
         <main className={` ${backgroundColor}`}>
@@ -244,7 +241,7 @@ export default function StreamDraftPage() {
                         {/*  Blue  */}
 
                         <div className="px-2 w-[500px] flex justify-end">
-                            <div className="flex bg-slate-800">
+                            <div className="flex bg-slate-400">
                                 {checkArrayBans(champArray, champdata, 0) ? (
                                     <img className={`w-14 h-14 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 0) ? 'animate-pulse' : ''}`} alt={champdata[champArray[0]]['name']}
                                         src={champdata[champArray[0]]['champ_sq']} />
@@ -279,7 +276,7 @@ export default function StreamDraftPage() {
                                     </svg>
                                 )}
                             </div>
-                            <div className="ml-12 flex bg-slate-800">
+                            <div className="ml-12 flex bg-slate-400">
                                 {checkArrayBans(champArray, champdata, 13) ? (
                                     <img className={`w-14 h-14 filter saturate-50 ${(gamePhase === 'PLAYING' && slotIndex === 13) ? 'animate-pulse' : ''}`} alt={champdata[champArray[13]]['name']}
                                         src={champdata[champArray[13]]['champ_sq']} />
@@ -377,7 +374,7 @@ export default function StreamDraftPage() {
 
                         {/*  Blue  */}
 
-                        <div className="ml-3 flex justify-end  w-fit bg-slate-800">
+                        <div className="ml-3 flex justify-end  w-fit bg-slate-400">
                             {checkCardExits(champArray, 6) ? (
                                 <img className={`w-26 h-26  ${(gamePhase === 'PLAYING' && slotIndex === 6) ? 'animate-pulse' : ''}`} alt={champdata[champArray[6]]['name']}
                                     src={`/cards/${champArray[6]}-card.webp`} />
@@ -432,7 +429,7 @@ export default function StreamDraftPage() {
 
                         {/*  Red  */}
 
-                        <div className="mr-3 flex w-fit bg-slate-800">
+                        <div className="mr-3 flex w-fit bg-slate-400">
                             {checkCardExits(champArray, 7) ? (
                                 <img className={`w-26 h-26 ${(gamePhase === 'PLAYING' && slotIndex === 7) ? 'animate-pulse' : ''}`} alt={champdata[champArray[7]]['name']}
                                     src={`/cards/${champArray[7]}-card.webp`} />
