@@ -1,7 +1,6 @@
 // Using a local champions.json file as the "database"
 import { readFileSync } from "fs";
 import { UpdateChampions } from "./updatechampions";
-import { versionIsUpToDate } from "./version";
 import path from "path";
 
 
@@ -9,11 +8,15 @@ export class LocalData {
 
     // create the champions.json -- with all the champions informations
     async createJson() {
-        const champObj = new UpdateChampions()
-        const data = await champObj.createChampionsData()
-        champObj.createChampionsJson(data)
-        console.log('New champions.json !')
-        return
+        try {
+            const champObj = new UpdateChampions()
+            const data = await champObj.createChampionsData()
+            champObj.createChampionsJson(data)
+            console.log('New champions.json !')
+            return true
+        } catch (e) {
+            return false
+        }
     }
 
     async getAllChampions(): Promise<any> {

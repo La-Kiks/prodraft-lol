@@ -3,7 +3,6 @@ import path from "path";
 import { LocalData } from "@prodraft/common/src/localbase";
 import { Champion } from "@prodraft/common/src/type";
 import fs from 'fs'
-import { versionIsUpToDate } from "@prodraft/common/src/version";
 
 
 const PATH = path.join(__dirname, '../public/cards/')

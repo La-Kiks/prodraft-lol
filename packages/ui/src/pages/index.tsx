@@ -39,12 +39,11 @@ export default function Home() {
   useEffect(() => {
     socket?.on('connect', () => {
       socket?.emit('join server')
-      console.log("socket connected")
+      console.log("Connected")
     })
 
     socket?.on('roomId', id => {
       ROOM_ID = id
-      console.log(ROOM_ID) // Can delete later
     })
 
   }, [socket]);

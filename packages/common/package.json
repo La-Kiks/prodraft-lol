@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "update-champions": "tsx src/createChampionsJason.ts",
-    "update-version": "tsx src/version.ts",
+    "update-app": "tsx src/updateApp.ts",
+    "check-version": "tsx src/version.ts check-version",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
