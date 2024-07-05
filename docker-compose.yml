@@ -12,6 +12,7 @@ services:
 
   ui:
     container_name: draft-ui
+    restart: unless-stopped
     build:
       context: .
       target: ui
