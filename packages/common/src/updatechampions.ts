@@ -39,14 +39,24 @@ export class UpdateChampions {
             if (data.hasOwnProperty(key)) {
                 const champion = data[key];
                 let champUrlSq = newLinks.genSquareImg(key.replace(/\s/g, ""))
-                const champUrlCt = newLinks.genBackgImg(champion.lol_id)
+                let champUrlCt = newLinks.genBackgImg(key.replace(/\s/g, ""))
                 const voiceUrlP = newLinks.genPickVoice(champion.lol_id)
                 const voiceUrlB = newLinks.genBanVoice(champion.lol_id)
                 try {
-                    // Handling exceptions where URL follow an alternate pattern
+                    // Portrait / Square image exception
                     const response = await fetch(champUrlSq)
                     if (!response.ok) {
                         champUrlSq = newLinks.genSquareImgAlt(key.replace(/\s/g, ""))
+                    }
+                } catch (e) {
+                    console.error(e)
+                    throw new RecordNotFoundError('Error adding images')
+                }
+                try {
+                    // Centered / Loading screen image exception
+                    const response = await fetch(champUrlCt)
+                    if (!response.ok) {
+                        champUrlCt = newLinks.genBackgImgAlt(key.replace(/\s/g, ""))
                     }
                 } catch (e) {
                     console.error(e)
@@ -58,10 +68,14 @@ export class UpdateChampions {
                 champion.ban_v = voiceUrlB
             }
         }
+
         // Handling exceptions where URL follow an unique pattern
         const champList = {
             Anivia:
                 "https://raw.communitydragon.org/latest/game/assets/characters/anivia/hud/cryophoenix_square.png",
+
+            Aurora:
+                "https://raw.communitydragon.org/latest/game/assets/characters/aurora/hud/aurora_square_0.aurora.png",
 
             Blitzcrank:
                 "https://raw.communitydragon.org/latest/game/assets/characters/blitzcrank/hud/steamgolem_square.png",
@@ -78,9 +92,6 @@ export class UpdateChampions {
             Rammus:
                 "https://raw.communitydragon.org/latest/game/assets/characters/rammus/hud/armordillo_square.png",
 
-            Skarner:
-                "https://raw.communitydragon.org/latest/game/assets/characters/skarner/hud/skarner_square_0.skarner_rework.png",
-
             Zilean:
                 "https://raw.communitydragon.org/latest/game/assets/characters/zilean/hud/chronokeeper_square.png",
         }
@@ -88,6 +99,26 @@ export class UpdateChampions {
             if (champList.hasOwnProperty(champName)) {
                 if (data.hasOwnProperty(champName)) {
                     data[champName].champ_sq = champList[champName as keyof typeof champList]
+                }
+            }
+        }
+
+        // Load Screen exceptions for CARDS.
+        const loadScreenList = {
+            Aurora:
+                "https://raw.communitydragon.org/latest/game/assets/characters/aurora/skins/base/auroraloadscreen_0.aurora.png",
+
+            Hwei:
+                "https://raw.communitydragon.org/latest/game/assets/characters/hwei/skins/skin0/hweiloadscreen_0.png",
+
+            LeeSin:
+                "https://raw.communitydragon.org/latest/game/assets/characters/leesin/skins/base/leesinloadscreen_0.asu_leesin.png",
+        }
+
+        for (const champLoadScreen in loadScreenList) {
+            if (loadScreenList.hasOwnProperty(champLoadScreen)) {
+                if (data.hasOwnProperty(champLoadScreen)) {
+                    data[champLoadScreen].champ_ct = loadScreenList[champLoadScreen as keyof typeof loadScreenList]
                 }
             }
         }
@@ -116,7 +147,7 @@ export class UpdateChampions {
             const response = await fetch(`http://cdn.merakianalytics.com/riot/lol/resources/latest/en-US/champions.json`)
             const meikdata = await response.json()
             for (const key in pdata) {
-                const positionArray: string[] = meikdata[key].positions
+                const positionArray: string[] = meikdata[key]?.positions || []
                 const positions = positionArray.join(', ')
                 pdata[key].tags = positions
             }
