@@ -92,6 +92,9 @@ export class UpdateChampions {
             Rammus:
                 "https://raw.communitydragon.org/latest/game/assets/characters/rammus/hud/armordillo_square.png",
 
+            Teemo:
+                "https://raw.communitydragon.org/latest/game/assets/characters/teemo/hud/teemo_square_0.asu_teemo.png",
+
             Zilean:
                 "https://raw.communitydragon.org/latest/game/assets/characters/zilean/hud/chronokeeper_square.png",
         }
@@ -113,6 +116,9 @@ export class UpdateChampions {
 
             LeeSin:
                 "https://raw.communitydragon.org/latest/game/assets/characters/leesin/skins/base/leesinloadscreen_0.asu_leesin.png",
+
+            Teemo:
+                "https://raw.communitydragon.org/latest/game/assets/characters/teemo/skins/base/teemoloadscreen_0.asu_teemo.png",
         }
 
         for (const champLoadScreen in loadScreenList) {
