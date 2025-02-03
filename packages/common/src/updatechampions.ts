@@ -97,7 +97,17 @@ export class UpdateChampions {
 
             Zilean:
                 "https://raw.communitydragon.org/latest/game/assets/characters/zilean/hud/chronokeeper_square.png",
+
+            Viktor:
+                "https://raw.communitydragon.org/latest/game/assets/characters/viktor/hud/viktor_square_0.viktorvgu.png",
+
+            Mel:
+                "https://raw.communitydragon.org/latest/game/assets/characters/mel/hud/mel_square_0.mel.png",
+
+            Ambessa: 
+                "https://raw.communitydragon.org/latest/game/assets/characters/ambessa/hud/ambessa_square_0.domina.png",
         }
+
         for (const champName in champList) {
             if (champList.hasOwnProperty(champName)) {
                 if (data.hasOwnProperty(champName)) {
@@ -114,11 +124,17 @@ export class UpdateChampions {
             Hwei:
                 "https://raw.communitydragon.org/latest/game/assets/characters/hwei/skins/skin0/hweiloadscreen_0.png",
 
-            LeeSin:
-                "https://raw.communitydragon.org/latest/game/assets/characters/leesin/skins/base/leesinloadscreen_0.asu_leesin.png",
-
             Teemo:
                 "https://raw.communitydragon.org/latest/game/assets/characters/teemo/skins/base/teemoloadscreen_0.asu_teemo.png",
+
+            Ambessa:
+                "https://raw.communitydragon.org/latest/game/assets/characters/ambessa/skins/base/ambessaloadscreen_0.domina.png",
+            
+            Mel:
+                "https://raw.communitydragon.org/latest/game/assets/characters/mel/skins/base/melloadscreen_0.mel.png",
+
+            Viktor:
+                "https://raw.communitydragon.org/latest/game/assets/characters/viktor/skins/base/viktorloadscreen_0.viktorvgu.png",
         }
 
         for (const champLoadScreen in loadScreenList) {
