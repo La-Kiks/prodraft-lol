@@ -20,6 +20,8 @@ const config = {
     extend: {
       colors: {
         green: "rgba(0,255,0,1)",
+        tengreen: "#3fe7ab",
+        tenpink: "#ff76a1",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

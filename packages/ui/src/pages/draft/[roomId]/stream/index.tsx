@@ -221,14 +221,14 @@ export default function StreamDraftPage() {
                     {/*  Team names  */}
 
                     <div className="px-2 flex w-full justify-between ">
-                        <div className="flex  bg-blue-400">
-                            <div className={` text-white bg-blue-500 flex py-1 px-4 transition-width duration-500  ${turn === 'red' ? 'w-[250px]' : 'w-[484px]'}`}>
+                        <div className="flex bg-tengreen">
+                            <div className={` text-slate-800 bg-tengreen flex py-1 px-4 transition-width duration-500  ${turn === 'red' ? 'w-[250px]' : 'w-[484px]'}`}>
                                 <h1 className="text-2xl overflow-hidden max-w-96">{blueName}</h1>
                             </div>
                         </div>
 
-                        <div className="flex  bg-red-400">
-                            <div className={` text-white bg-red-500 flex flex-row-reverse py-1 px-4 transition-width duration-500  ${turn === 'blue' ? 'w-[250px]' : 'w-[484px]'} `}>
+                        <div className="flex bg-tenpink">
+                            <div className={` text-slate-800 bg-tenpink flex flex-row-reverse py-1 px-4 transition-width duration-500  ${turn === 'blue' ? 'w-[250px]' : 'w-[484px]'} `}>
                                 <h1 className="text-2xl overflow-hidden">{redName}</h1>
                             </div>
                         </div>
